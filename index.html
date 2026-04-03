@@ -357,8 +357,9 @@
       <div class="leads-table-wrapper">
         <table id="leadsTable">
           <thead><tr><th>Student</th><th>Parent</th><th>Contact</th><th>Email</th><th>Age</th><th>Workshop</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
-          <tbody id="leadsTbody"><tr><td colspan="9" style="text-align:center;">🔒 Admin login required to view leads</td></tr></tbody>
-        </table>
+          <tbody id="leadsTbody"><tr><td colspan="9" style="text-align:center;">🔒 Admin login required to view leads</td></tr>
+        </tbody>
+      </table>
       </div>
       <div id="leadsCountInfo" style="margin-top: 10px;"></div>
     </div>
@@ -419,14 +420,9 @@
   }
 
   // ---------- Send "Confirmation Message" to lead (simulated + email notification to admin) ----------
-  // Actually sends a notification email to company email using FormSubmit.co free endpoint (no registration)
-  // And shows user a success message that they will be contacted.
   async function sendConfirmationAndNotify(leadData, userEmail) {
-    // 1) Show user friendly confirmation on screen
     showFeedback(`🎉 Thank you ${leadData.student_name}! A confirmation message has been sent to your email (if provided) and our team will contact you soon via WhatsApp/Phone.`, 'success', 'formFeedback');
     
-    // 2) Send notification email to company (poojakhatri519@gmail.com) about new lead
-    // Using free FormSubmit.co endpoint (simple, no API key needed for basic usage)
     try {
       const emailContent = `
         New Lead from BrainCity Workshop:
@@ -439,7 +435,6 @@
         Source: ${leadData.source_of_inquiry}
         Message: ${leadData.message || '---'}
       `;
-      // Send to company email using fetch to formsubmit (free)
       await fetch('https://formsubmit.co/ajax/poojakhatri519@gmail.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -452,7 +447,6 @@
       }).catch(e => console.warn('Email notification error (non-critical):', e));
     } catch (err) { console.log("Notification not sent (optional)"); }
     
-    // 3) If user provided email, we also show a demo note (since actual mail to user requires backend)
     if (userEmail) {
       console.log(`Demo: confirmation email would be sent to ${userEmail}`);
     }
@@ -496,15 +490,13 @@
       const { error } = await supabase.from(TABLE_NAME).insert([payload]);
       if (error) throw error;
       
-      // Send confirmation & notify company
       await sendConfirmationAndNotify(payload, payload.email);
       
-      // Reset form
       form.reset();
       ageDisplay.value = ''; ageHidden.value = ''; dobInput.value = '';
       document.getElementById('whatsapp_consent').checked = false;
       
-      // If admin is logged in, refresh leads table
+      // If admin is logged in (though not used now), refresh leads table
       if (adminPanel.style.display !== 'none' && window.isAdminLoggedIn) {
         fetchAllLeadsForAdmin();
       }
@@ -516,11 +508,11 @@
     }
   });
 
-  // ---------- ADMIN LOGIC (simple password, hidden from visitors) ----------
+  // ---------- ADMIN LOGIC (NOW REDIRECTS TO login.html) ----------
+  // The floating button will open the separate login page instead of inline admin.
   let isAdminLoggedIn = false;
-  const ADMIN_PASSWORD = "brainadmin2025";  // simple secure password (change as needed)
   
-  // Function to render admin leads (only if logged in)
+  // Function to fetch leads (kept for completeness but not used because admin panel is hidden)
   async function fetchAllLeadsForAdmin() {
     if (!isAdminLoggedIn) return;
     leadsTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Loading leads...</td></tr>';
@@ -545,7 +537,6 @@
         row.insertCell(4).innerText = lead.age ? `${lead.age} yrs` : '—';
         row.insertCell(5).innerText = lead.inquiry_for || 'Workshop';
         
-        // Status update dropdown
         const statusCell = row.insertCell(6);
         const statusSelect = document.createElement('select');
         statusSelect.className = 'status-select';
@@ -583,35 +574,7 @@
     }
   }
 
-  // Create login UI if not already present inside admin panel
-  function ensureAdminLoginUI() {
-    const adminDiv = document.getElementById('adminPanel');
-    if (!adminDiv.querySelector('.admin-login-box')) {
-      const loginBox = document.createElement('div');
-      loginBox.className = 'admin-login-box';
-      loginBox.innerHTML = `
-        <input type="password" id="adminPasswordInput" placeholder="Enter admin password">
-        <button id="adminLoginBtn">🔑 Login to View Leads</button>
-      `;
-      adminDiv.insertBefore(loginBox, adminDiv.firstChild);
-      document.getElementById('adminLoginBtn')?.addEventListener('click', () => {
-        const pwd = document.getElementById('adminPasswordInput').value;
-        if (pwd === ADMIN_PASSWORD) {
-          isAdminLoggedIn = true;
-          window.isAdminLoggedIn = true;
-          adminPanel.style.display = 'block';
-          // Remove login box after success
-          const box = document.querySelector('#adminPanel .admin-login-box');
-          if (box) box.remove();
-          fetchAllLeadsForAdmin();
-        } else {
-          alert('Incorrect password. Access denied.');
-        }
-      });
-    }
-  }
-
-  // Show admin panel button (sticky small button) for easy access
+  // Create floating button that redirects to login.html
   const adminToggleBtn = document.createElement('button');
   adminToggleBtn.innerText = '🔒 Admin Login';
   adminToggleBtn.style.position = 'fixed';
@@ -623,44 +586,27 @@
   adminToggleBtn.style.borderRadius = '40px';
   adminToggleBtn.style.fontSize = '0.8rem';
   adminToggleBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+  adminToggleBtn.style.cursor = 'pointer';
+  adminToggleBtn.style.border = 'none';
+  adminToggleBtn.style.color = 'white';
   document.body.appendChild(adminToggleBtn);
   
+  // CHANGE: Clicking the button now opens login.html (separate admin login page)
   adminToggleBtn.addEventListener('click', () => {
-    if (isAdminLoggedIn) {
-      if (adminPanel.style.display === 'none') {
-        adminPanel.style.display = 'block';
-        fetchAllLeadsForAdmin();
-      } else {
-        adminPanel.style.display = 'none';
-      }
-    } else {
-      adminPanel.style.display = 'block';
-      ensureAdminLoginUI();
-      // Scroll to admin panel
-      adminPanel.scrollIntoView({ behavior: 'smooth' });
-    }
+    window.location.href = 'login.html';
   });
   
-  // Initially hide admin panel completely from visitors
+  // Initially hide admin panel (it's not used anymore but kept for structure)
   adminPanel.style.display = 'none';
-  ensureAdminLoginUI();
   
-  // Logout functionality
+  // Logout button inside admin panel (if ever shown) – redirect to login
   const logoutBtn = document.getElementById('logoutAdminBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      isAdminLoggedIn = false;
-      window.isAdminLoggedIn = false;
-      adminPanel.style.display = 'none';
-      // Re-insert login UI on next show
-      const oldBox = document.querySelector('#adminPanel .admin-login-box');
-      if (oldBox) oldBox.remove();
-      ensureAdminLoginUI();
-      alert('Logged out from admin panel.');
+      window.location.href = 'login.html';
     });
   }
   
-  // Optional: if admin is logged in via previous session (not persistent, just fresh)
   window.isAdminLoggedIn = false;
 })();
 </script>
