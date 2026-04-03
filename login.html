@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Abacus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(145deg, #F0F2F5 0%, #E2E8F0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .auth-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 2rem;
+            box-shadow: 0 30px 50px -20px rgba(44, 62, 102, 0.3);
+            overflow: hidden;
+        }
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .login-panel {
+            flex: 1.2;
+            background: #FFFFFF;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .logo-cover {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo-cover img {
+            max-width: 85%;
+            max-height: 130px;
+            object-fit: contain;
+        }
+        .brand-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2C3E66;
+        }
+        .brand-sub {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #5D7B9F;
+            margin-bottom: 1.8rem;
+        }
+        .welcome-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2C3E66;
+        }
+        .access-badge {
+            display: inline-block;
+            background: #E67E5E20;
+            color: #E67E5E;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            margin-left: 0.75rem;
+            vertical-align: middle;
+        }
+        .subtitle {
+            color: #5D7B9F;
+            font-size: 0.85rem;
+            margin-bottom: 1.8rem;
+        }
+        .input-group {
+            margin-bottom: 1.4rem;
+        }
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: #2D2F36;
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #D9B48B40;
+            border-radius: 1rem;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #E67E5E;
+            box-shadow: 0 0 0 3px rgba(230, 126, 94, 0.15);
+        }
+        .login-btn {
+            background: #2C3E66;
+            color: white;
+            font-weight: 700;
+            padding: 0.9rem;
+            width: 100%;
+            border: none;
+            border-radius: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.25s ease;
+        }
+        .login-btn:hover {
+            background: #1f2e52;
+            transform: translateY(-2px);
+        }
+        .error-msg {
+            background: #FEF3F2;
+            color: #C2410C;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            border-left: 4px solid #E67E5E;
+        }
+        .success-msg {
+            background: #F0F9F0;
+            color: #2C6E2F;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            border-left: 4px solid #D9B48B;
+        }
+        .loader {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .illustration-panel {
+            flex: 1;
+            background: #F0F2F5;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .illustration-panel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @media (max-width: 850px) {
+            .card-grid { flex-direction: column; }
+            .illustration-panel { min-height: 280px; order: -1; }
+            .login-panel { padding: 1.5rem; }
+        }
+        .secure-footer {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #5D7B9F;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #F0F2F5;
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="auth-card">
+    <div class="card-grid">
+        <div class="login-panel">
+            <div class="logo-cover">
+                <img src="abacus_logo.png" alt="Abacus Logo" onerror="this.src='https://placehold.co/280x100?text=ABACUS'">
+            </div>
+            <div style="text-align: center;">
+                <span class="brand-title">Abacus Academy</span>
+                <div class="brand-sub">Executive Access</div>
+            </div>
+            <div>
+                <h1 class="welcome-title">Admin sign in <span class="access-badge">RESTRICTED</span></h1>
+                <p class="subtitle">Authorized personnel only · Database role = 'admin'</p>
+            </div>
+            <form id="loginForm" action="javascript:void(0);">
+                <div class="input-group">
+                    <label>📧 Email address</label>
+                    <input type="email" id="email" required placeholder="admin@abacus.edu">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="loginButton" class="login-btn">
+                    <span id="btnText">Authenticate & verify admin</span>
+                    <span id="btnLoader" style="display: none;"><div class="loader"></div></span>
+                </button>
+            </form>
+            <div id="messageContainer"></div>
+            <div class="secure-footer">
+                🔐 Uses database function `get_user_role()` to check admin status from public.users table.
+            </div>
+        </div>
+        <div class="illustration-panel">
+            <img src="login.svg" alt="Admin illustration" onerror="this.src='https://placehold.co/800x600?text=Secure+Zone'">
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://mskbwsxezirjvobgxifj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginButton');
+    const btnTextSpan = document.getElementById('btnText');
+    const btnLoaderSpan = document.getElementById('btnLoader');
+    const messageContainer = document.getElementById('messageContainer');
+
+    function showMessage(message, isError = true) {
+        messageContainer.innerHTML = `<div class="${isError ? 'error-msg' : 'success-msg'}">${message}</div>`;
+        if (!isError) setTimeout(() => { if (messageContainer.firstChild) messageContainer.innerHTML = ''; }, 4000);
+    }
+    function clearMessage() { messageContainer.innerHTML = ''; }
+    function setLoading(isLoading) {
+        loginBtn.disabled = isLoading;
+        btnTextSpan.style.display = isLoading ? 'none' : 'inline';
+        btnLoaderSpan.style.display = isLoading ? 'inline-flex' : 'none';
+    }
+
+    async function verifyAdminViaRPC(userId) {
+        // Call the secure function get_user_role
+        const { data, error } = await supabaseClient.rpc('get_user_role', { user_id: userId });
+        if (error) {
+            console.error("RPC error:", error);
+            throw new Error("Unable to verify admin role. Please ensure the function 'get_user_role' exists.");
+        }
+        if (data !== 'admin') {
+            throw new Error(`Access denied: Only users with role='admin' in public.users table can log in. Your role: ${data || 'none'}`);
+        }
+        return true;
+    }
+
+    async function handleLogin(email, password) {
+        clearMessage();
+        setLoading(true);
+        try {
+            // 1. Authenticate
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) throw new Error("Invalid email or password. Please try again.");
+
+            const user = data.user;
+            if (!user) throw new Error("No user data returned.");
+
+            // 2. Check admin role via database RPC (bypasses RLS recursion)
+            await verifyAdminViaRPC(user.id);
+
+            showMessage("✅ Admin access granted. Redirecting to dashboard...", false);
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1200);
+        } catch (err) {
+            console.error("Login error:", err);
+            showMessage(err.message, true);
+            await supabaseClient.auth.signOut();
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function checkExistingAdminSession() {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                const { data: role } = await supabaseClient.rpc('get_user_role', { user_id: session.user.id });
+                if (role === 'admin') {
+                    window.location.replace("dashboard.html");
+                } else {
+                    await supabaseClient.auth.signOut();
+                }
+            }
+        } catch (err) { console.warn("Session check:", err); }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if (!email || !password) return showMessage("Please enter both email and password.", true);
+        if (!email.includes('@')) return showMessage("Valid email required.", true);
+        handleLogin(email, password);
+    });
+
+    checkExistingAdminSession();
+    console.log("✅ Using public.users table role column via RPC function 'get_user_role'");
+</script>
+</body>
+</html>
