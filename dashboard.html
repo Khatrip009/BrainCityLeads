@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Lead Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #F0F2F5;
+            padding: 1.5rem;
+        }
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        /* LIGHTER HEADER - logo friendly */
+        .dashboard-header {
+            background: #FFFFFF;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 2px solid #E2E8F0;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo-area img {
+            height: 50px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+        }
+        .logo-area h1 {
+            color: #2C3E66;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .logout-btn {
+            background: #E67E5E;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .logout-btn:hover {
+            background: #c55a3a;
+            transform: translateY(-1px);
+        }
+        .controls-bar {
+            padding: 1.5rem 2rem;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .filter-group label {
+            font-weight: 600;
+            color: #2D2F36;
+        }
+        select, .export-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #D9B48B;
+            background: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .export-btn {
+            background: #2C3E66;
+            color: white;
+            border: none;
+            transition: 0.2s;
+        }
+        .export-btn:hover {
+            background: #1f2e52;
+        }
+        .refresh-btn {
+            background: #5D7B9F;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            background: #F0F2F5;
+            color: #2C3E66;
+            padding: 0.9rem 0.8rem;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid #D9B48B;
+        }
+        td {
+            padding: 0.8rem;
+            border-bottom: 1px solid #EDF2F7;
+            vertical-align: middle;
+        }
+        tr:hover {
+            background: #F9FBFD;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.2rem;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .btn-icon:hover {
+            background: #E2E8F0;
+        }
+        .notes-modal, .email-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 30px -10px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 1rem;
+            color: #2C3E66;
+        }
+        .modal-content textarea, .modal-content input {
+            width: 100%;
+            padding: 0.7rem;
+            margin: 0.5rem 0 1rem;
+            border: 1px solid #D9B48B;
+            border-radius: 1rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.8rem;
+        }
+        .modal-buttons button {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .save-btn {
+            background: #2C3E66;
+            color: white;
+        }
+        .cancel-btn {
+            background: #E2E8F0;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: #5D7B9F;
+        }
+        .status-select {
+            padding: 0.3rem;
+            border-radius: 1rem;
+            border: 1px solid #D9B48B;
+            font-size: 0.75rem;
+        }
+        footer {
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #5D7B9F;
+            border-top: 1px solid #EDF2F7;
+        }
+        @media (max-width: 700px) {
+            body { padding: 0.5rem; }
+            th, td { font-size: 0.7rem; padding: 0.5rem; }
+            .action-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Lighter header: white background, dark text -->
+    <div class="dashboard-header">
+        <div class="logo-area">
+            <img src="abacus_logo.png" alt="Logo" onerror="this.src='https://placehold.co/50x50'">
+            <h1>Lead Management Dashboard</h1>
+        </div>
+        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+    </div>
+
+    <div class="controls-bar">
+        <div class="filter-group">
+            <label>📊 Filter by status:</label>
+            <select id="statusFilter">
+                <option value="all">All Leads</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="converted">Converted</option>
+                <option value="closed">Closed</option>
+            </select>
+            <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
+        </div>
+        <button class="export-btn" id="exportExcelBtn">📎 Export to Excel</button>
+    </div>
+
+    <div class="table-wrapper" id="tableWrapper">
+        <div class="loading">Loading inquiries...</div>
+    </div>
+    <footer>
+        🔐 Secure Admin Panel | Manage leads, update status, add notes & email directly
+    </footer>
+</div>
+
+<!-- Notes Modal -->
+<div id="notesModal" class="notes-modal" style="display: none;">
+    <div class="modal-content">
+        <h3>✏️ Update Notes</h3>
+        <textarea id="notesText" rows="4" placeholder="Add or edit notes..."></textarea>
+        <div class="modal-buttons">
+            <button class="cancel-btn" id="closeNotesModal">Cancel</button>
+            <button class="save-btn" id="saveNotesBtn">Save Notes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Email Modal -->
+<div id="emailModal" class="email-modal" style="display: none;">
+    <div class="modal-content">
+        <h3>📧 Send Email</h3>
+        <label>To:</label>
+        <input type="email" id="emailTo" readonly>
+        <label>Subject:</label>
+        <input type="text" id="emailSubject" placeholder="Subject">
+        <label>Message:</label>
+        <textarea id="emailBody" rows="5" placeholder="Type your message..."></textarea>
+        <div class="modal-buttons">
+            <button class="cancel-btn" id="closeEmailModal">Cancel</button>
+            <button class="save-btn" id="sendEmailBtn">Send via Email Client</button>
+        </div>
+        <small>Note: Opens your default email client (mailto:).</small>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://mskbwsxezirjvobgxifj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentLeads = [];
+    let currentFilter = "all";
+    let selectedInquiryId = null;
+    let selectedEmail = "";
+
+    const tableWrapper = document.getElementById("tableWrapper");
+    const statusFilter = document.getElementById("statusFilter");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const exportBtn = document.getElementById("exportExcelBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const notesModal = document.getElementById("notesModal");
+    const notesTextarea = document.getElementById("notesText");
+    const saveNotesBtn = document.getElementById("saveNotesBtn");
+    const closeNotesModal = document.getElementById("closeNotesModal");
+    
+    const emailModal = document.getElementById("emailModal");
+    const emailTo = document.getElementById("emailTo");
+    const emailSubject = document.getElementById("emailSubject");
+    const emailBody = document.getElementById("emailBody");
+    const sendEmailBtn = document.getElementById("sendEmailBtn");
+    const closeEmailModal = document.getElementById("closeEmailModal");
+
+    function showLoading() {
+        tableWrapper.innerHTML = '<div class="loading">📋 Loading leads...</div>';
+    }
+
+    async function fetchLeads() {
+        showLoading();
+        const { data, error } = await supabaseClient
+            .from("inquiries")
+            .select("*")
+            .order("created_at", { ascending: false });
+        if (error) {
+            console.error("Fetch error:", error);
+            tableWrapper.innerHTML = `<div class="loading">❌ Error loading leads: ${error.message}</div>`;
+            return [];
+        }
+        return data || [];
+    }
+
+    async function renderDashboard() {
+        const leads = await fetchLeads();
+        currentLeads = leads;
+        applyFilterAndRender();
+    }
+
+    function applyFilterAndRender() {
+        let filtered = [...currentLeads];
+        if (currentFilter !== "all") {
+            filtered = filtered.filter(lead => lead.status === currentFilter);
+        }
+        renderTable(filtered);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderTable(leads) {
+        if (!leads.length) {
+            tableWrapper.innerHTML = '<div class="loading">✨ No leads found for this status.</div>';
+            return;
+        }
+        const html = `
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>Parent</th><th>Contact</th><th>Email</th><th>Standard</th><th>Status</th><th>Notes</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    ${leads.map(lead => `
+                        <tr>
+                            <td><strong>${escapeHtml(lead.student_name)}</strong><br><small>DOB: ${lead.date_of_birth || '—'}</small></td>
+                            <td>${escapeHtml(lead.parent_name)}</td>
+                            <td>${escapeHtml(lead.contact_number)}<br><small>${lead.whatsapp_number ? 'WA: '+escapeHtml(lead.whatsapp_number) : ''}</small></td>
+                            <td>${lead.email ? `<a href="mailto:${lead.email}">${escapeHtml(lead.email)}</a>` : '—'}</td>
+                            <td>${escapeHtml(lead.standard || '—')}<br><small>${escapeHtml(lead.school_name || '')}</small></td>
+                            <td>
+                                <select class="status-select" data-id="${lead.id}" data-current="${lead.status || 'new'}">
+                                    <option value="new" ${lead.status === 'new' ? 'selected' : ''}>🟠 New</option>
+                                    <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>🟡 Contacted</option>
+                                    <option value="converted" ${lead.status === 'converted' ? 'selected' : ''}>🟢 Converted</option>
+                                    <option value="closed" ${lead.status === 'closed' ? 'selected' : ''}>⚫ Closed</option>
+                                </select>
+                            </td>
+                            <td><button class="btn-icon notes-btn" data-id="${lead.id}" data-notes="${escapeHtml(lead.notes || '')}" title="Edit notes">📝</button> ${lead.notes ? `<span title="${escapeHtml(lead.notes)}">✍️</span>` : ''}</td>
+                            <td class="action-buttons">
+                                <button class="btn-icon email-action" data-email="${lead.email || ''}" data-name="${escapeHtml(lead.student_name)}" title="Send email">📧</button>
+                                <button class="btn-icon view-details" data-lead='${JSON.stringify(lead).replace(/'/g, "&#39;")}' title="View details">🔍</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        tableWrapper.innerHTML = html;
+        
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+                const newStatus = e.target.value;
+                const leadId = select.getAttribute('data-id');
+                await updateStatus(leadId, newStatus);
+                await renderDashboard();
+            });
+        });
+        document.querySelectorAll('.notes-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const notes = btn.getAttribute('data-notes') || '';
+                openNotesModal(id, notes);
+            });
+        });
+        document.querySelectorAll('.email-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const email = btn.getAttribute('data-email');
+                const name = btn.getAttribute('data-name');
+                if (!email) {
+                    alert("No email address for this lead.");
+                    return;
+                }
+                openEmailModal(email, name);
+            });
+        });
+        document.querySelectorAll('.view-details').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const leadData = btn.getAttribute('data-lead');
+                try {
+                    const lead = JSON.parse(leadData);
+                    alert(`📋 Lead Details:\nStudent: ${lead.student_name}\nParent: ${lead.parent_name}\nContact: ${lead.contact_number}\nEmail: ${lead.email || 'N/A'}\nStandard: ${lead.standard || 'N/A'}\nSchool: ${lead.school_name || 'N/A'}\nInquiry: ${lead.inquiry_for || 'N/A'}\nSource: ${lead.source_of_inquiry || 'N/A'}\nMessage: ${lead.message || 'N/A'}\nNotes: ${lead.notes || 'None'}`);
+                } catch(e) { alert("Could not load details"); }
+            });
+        });
+    }
+
+    async function updateStatus(id, newStatus) {
+        const { error } = await supabaseClient
+            .from('inquiries')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) {
+            console.error("Status update error:", error);
+            alert("Failed to update status.");
+        }
+    }
+
+    async function updateNotes(id, notes) {
+        const { error } = await supabaseClient
+            .from('inquiries')
+            .update({ notes: notes, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) {
+            console.error("Notes update error:", error);
+            alert("Failed to save notes.");
+            return false;
+        }
+        return true;
+    }
+
+    function openNotesModal(id, currentNotes) {
+        selectedInquiryId = id;
+        notesTextarea.value = currentNotes;
+        notesModal.style.display = 'flex';
+    }
+
+    function openEmailModal(email, studentName) {
+        selectedEmail = email;
+        emailTo.value = email;
+        emailSubject.value = `Regarding your inquiry - Abacus Academy`;
+        emailBody.value = `Dear ${studentName},\n\nThank you for your interest in Abacus Academy.\n\nBest regards,\nAdmin Team`;
+        emailModal.style.display = 'flex';
+    }
+
+    function exportToExcel() {
+        let dataToExport = [...currentLeads];
+        if (currentFilter !== "all") {
+            dataToExport = dataToExport.filter(lead => lead.status === currentFilter);
+        }
+        if (dataToExport.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+        const worksheetData = dataToExport.map(lead => ({
+            'Student Name': lead.student_name,
+            'Parent Name': lead.parent_name,
+            'Date of Birth': lead.date_of_birth,
+            'Age': lead.age,
+            'School': lead.school_name,
+            'Standard': lead.standard,
+            'Contact Number': lead.contact_number,
+            'Email': lead.email,
+            'WhatsApp': lead.whatsapp_number,
+            'WhatsApp Consent': lead.whatsapp_consent ? 'Yes' : 'No',
+            'Inquiry For': lead.inquiry_for,
+            'Source': lead.source_of_inquiry,
+            'Message': lead.message,
+            'Status': lead.status,
+            'Notes': lead.notes,
+            'Created At': lead.created_at,
+        }));
+        const ws = XLSX.utils.json_to_sheet(worksheetData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+        XLSX.writeFile(wb, `abacus_leads_${currentFilter}_${new Date().toISOString().slice(0,19)}.xlsx`);
+    }
+
+    statusFilter.addEventListener('change', (e) => {
+        currentFilter = e.target.value;
+        applyFilterAndRender();
+    });
+    refreshBtn.addEventListener('click', () => renderDashboard());
+    exportBtn.addEventListener('click', exportToExcel);
+    logoutBtn.addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+    });
+    saveNotesBtn.addEventListener('click', async () => {
+        const newNotes = notesTextarea.value;
+        if (selectedInquiryId) {
+            await updateNotes(selectedInquiryId, newNotes);
+            notesModal.style.display = 'none';
+            await renderDashboard();
+        }
+    });
+    closeNotesModal.addEventListener('click', () => notesModal.style.display = 'none');
+    sendEmailBtn.addEventListener('click', () => {
+        if (!selectedEmail) return;
+        const subject = encodeURIComponent(emailSubject.value);
+        const body = encodeURIComponent(emailBody.value);
+        window.location.href = `mailto:${selectedEmail}?subject=${subject}&body=${body}`;
+        emailModal.style.display = 'none';
+    });
+    closeEmailModal.addEventListener('click', () => emailModal.style.display = 'none');
+    window.addEventListener('click', (e) => {
+        if (e.target === notesModal) notesModal.style.display = 'none';
+        if (e.target === emailModal) emailModal.style.display = 'none';
+    });
+
+    async function checkAuth() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            window.location.href = "login.html";
+            return false;
+        }
+        try {
+            const { data: role } = await supabaseClient.rpc('get_user_role', { user_id: session.user.id });
+            if (role !== 'admin') {
+                await supabaseClient.auth.signOut();
+                window.location.href = "login.html";
+                return false;
+            }
+        } catch(e) { console.warn(e); }
+        return true;
+    }
+
+    (async () => {
+        const authed = await checkAuth();
+        if (authed) {
+            await renderDashboard();
+        }
+    })();
+</script>
+</body>
+</html>
