@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>BrainCity Abacus | Brain Gym Workshop – Enroll Now</title>
+  <title>BrainCity + WonderNest | Enroll Now</title>
   <!-- Google Fonts & Supabase -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,73 +25,79 @@
       margin: 0 auto;
       padding: 0 1.5rem;
     }
-    /* Hero Section */
+    /* Hero Section with Dual Logos */
     .hero {
       background: linear-gradient(135deg, #2C3E66 0%, #1a2a4a 100%);
       border-radius: 0 0 48px 48px;
-      padding: 3rem 1.5rem 4rem;
+      padding: 2rem 1.5rem 3rem;
       margin-bottom: 2rem;
       color: white;
       position: relative;
       overflow: hidden;
     }
-    .hero .container {
-      position: relative;
-      z-index: 2;
-    }
-    .hero-logo {
+    .hero-logos {
       display: flex;
       justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
       margin-bottom: 1.5rem;
     }
-    .hero-logo img {
-      height: 90px;
+    .hero-logos img {
+      height: 70px;
       background: white;
-      padding: 8px 20px;
+      padding: 6px 18px;
       border-radius: 60px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      object-fit: contain;
     }
     .hero h1 {
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       font-weight: 800;
       text-align: center;
-      margin-bottom: 1rem;
-      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
     }
     .hero .tagline {
       text-align: center;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: 500;
       color: #D9B48B;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1rem;
     }
-    .hero .workshop-badge-hero {
+    .program-badges {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+    .badge-bc {
       background: #E67E5E;
-      display: inline-block;
-      padding: 0.5rem 1.8rem;
+      padding: 0.4rem 1.2rem;
       border-radius: 40px;
       font-weight: 700;
-      margin: 1rem auto;
-      width: fit-content;
-      font-size: 1.1rem;
+    }
+    .badge-wn {
+      background: #5D7B9F;
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 700;
     }
     .hero-cta {
       display: flex;
       justify-content: center;
       gap: 20px;
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       flex-wrap: wrap;
     }
     .btn-primary {
       background: #E67E5E;
-      padding: 14px 32px;
+      padding: 12px 28px;
       border-radius: 50px;
       color: white;
       font-weight: 700;
       text-decoration: none;
-      transition: 0.2s;
       display: inline-block;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+      transition: 0.2s;
     }
     .btn-primary:hover {
       background: #cf6a4a;
@@ -100,7 +106,7 @@
     .btn-outline-light {
       background: transparent;
       border: 2px solid white;
-      padding: 12px 28px;
+      padding: 10px 24px;
       border-radius: 50px;
       color: white;
       font-weight: 600;
@@ -136,7 +142,6 @@
       background: #F8FAFE;
       padding: 1.5rem;
       border-radius: 24px;
-      transition: 0.2s;
       border: 1px solid #eef2f8;
     }
     .benefit-card h3 {
@@ -199,62 +204,56 @@
     }
     .alert-success { background: #E0F2E9; color: #1F6E43; border-left: 5px solid #2E7D32; }
     .alert-error { background: #FFECEE; color: #B33A3A; border-left: 5px solid #E67E5E; }
-    /* Admin Panel (hidden by default) */
-    .admin-panel {
-      background: #FFFFFF;
-      border-radius: 32px;
-      padding: 1.5rem;
-      margin-top: 2rem;
-      border: 2px solid #E67E5E;
+    /* Program selector styling */
+    .program-selector {
+      background: #F8FAFE;
+      border-radius: 28px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.8rem;
+      border: 1px solid #E2E8F0;
     }
-    .admin-login-box {
+    .program-selector label {
+      font-weight: 700;
+      margin-right: 1rem;
+    }
+    .program-options {
       display: flex;
-      gap: 12px;
-      align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 1.5rem;
+      gap: 1rem;
+      margin-top: 0.8rem;
     }
-    .admin-login-box input {
-      flex: 1;
-      min-width: 200px;
-    }
-    .leads-table-wrapper {
-      overflow-x: auto;
-      margin-top: 1rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    th {
-      background: #F0F2F5;
-      color: #2C3E66;
-      padding: 12px 8px;
-      text-align: left;
-    }
-    td {
-      padding: 10px 8px;
-      border-bottom: 1px solid #E9EEF2;
-    }
-    .badge-status {
-      background: #D9B48B30;
-      padding: 4px 10px;
+    .program-option {
+      background: white;
+      border: 1.5px solid #D9B48B;
       border-radius: 40px;
-      font-size: 0.7rem;
-      font-weight: 600;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-weight: 500;
     }
-    .delete-btn {
-      background: none;
-      color: #c0392b;
-      padding: 4px 12px;
-      font-size: 0.7rem;
-      border: 1px solid #f0c0b8;
+    .program-option.selected {
+      background: #E67E5E;
+      border-color: #E67E5E;
+      color: white;
     }
-    .status-select {
-      padding: 4px 8px;
+    /* Admin floating button (redirects to login.html) */
+    .floating-admin {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #2C3E66;
+      color: white;
+      width: 50px;
+      height: 50px;
       border-radius: 30px;
-      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      z-index: 99;
+      font-size: 1.3rem;
+      border: none;
     }
     footer {
       text-align: center;
@@ -275,25 +274,28 @@
     @media (max-width: 700px) {
       .hero h1 { font-size: 1.8rem; }
       .card { padding: 1.2rem; }
+      .program-options { justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-<!-- HERO SECTION -->
+<!-- HERO SECTION with both brands -->
 <section class="hero">
   <div class="container">
-    <div class="hero-logo">
+    <div class="hero-logos">
       <img src="abacus_logo.png" alt="BrainCity Abacus" onerror="this.src='https://placehold.co/400x100?text=BrainCity+Abacus'">
+      <img src="wondernest_logo.png" alt="WonderNest" onerror="this.src='https://placehold.co/400x100?text=WonderNest'">
     </div>
-    <h1>Brain Gym Workshop<br>+ Abacus Excellence</h1>
-    <div class="tagline">Unlock your child’s hidden potential in just 3 days</div>
-    <div style="text-align: center;">
-      <span class="workshop-badge-hero">⚡ Limited Seats | Age 4–7 & 8+ ⚡</span>
+    <h1>Brain Gym Workshop <span style="color:#D9B48B;">+</span> WonderNest Courses</h1>
+    <div class="tagline">Unlock potential with Abacus • Phoenix • Grammar • Handwriting</div>
+    <div class="program-badges">
+      <span class="badge-bc">🧠 BrainCity: 3-Day Brain Gym</span>
+      <span class="badge-wn">✨ WonderNest: Phoenix | Grammar | Handwriting</span>
     </div>
     <div class="hero-cta">
-      <a href="#leadFormSection" class="btn-primary">📝 Register Now – Free Workshop Intro</a>
-      <a href="#benefits" class="btn-outline-light">👇 Discover Benefits</a>
+      <a href="#leadFormSection" class="btn-primary">📝 Register Now – Free Counselling</a>
+      <a href="#benefits" class="btn-outline-light">👇 Explore Programs</a>
     </div>
   </div>
 </section>
@@ -301,10 +303,24 @@
 <div class="container">
   <!-- Lead Form Section (public) -->
   <div class="card" id="leadFormSection">
-    <div class="section-title">✨ Register for 3-Day Brain Gym Workshop</div>
-    <div class="section-sub">Give your child the gift of faster calculation, memory boost & confidence</div>
+    <div class="section-title">✨ Enroll Today – Choose Your Program</div>
+    <div class="section-sub">BrainCity's Brain Gym Workshop (3 days) OR WonderNest skill courses</div>
     <div id="formFeedback"></div>
+    
     <form id="leadForm">
+      <!-- Program Selection (BrainCity vs WonderNest) -->
+      <div class="program-selector">
+        <label>🎯 Select Program Interest *</label>
+        <div class="program-options" id="programOptions">
+          <div data-value="BrainCity: 3-Day Brain Gym Workshop (Age 4-7)" class="program-option">🧠 BrainCity: Brain Gym (4-7 yrs)</div>
+          <div data-value="BrainCity: 3-Day Brain Gym Workshop (Age 8+)" class="program-option">🧠 BrainCity: Brain Gym (8+ yrs)</div>
+          <div data-value="WonderNest: Phoenix Program (Personality Development)" class="program-option">🦅 WonderNest: Phoenix Program</div>
+          <div data-value="WonderNest: Grammar Mastery" class="program-option">📖 WonderNest: Grammar Mastery</div>
+          <div data-value="WonderNest: Handwriting Improvement" class="program-option">✍️ WonderNest: Handwriting Improvement</div>
+        </div>
+        <input type="hidden" id="inquiry_for" value="BrainCity: 3-Day Brain Gym Workshop (Age 4-7)">
+      </div>
+
       <div class="form-grid">
         <div class="form-field"><label class="required">Student's Full Name</label><input type="text" id="student_name" required></div>
         <div class="form-field"><label class="required">Parent / Guardian Name</label><input type="text" id="parent_name" required></div>
@@ -315,25 +331,24 @@
         <div class="form-field"><label class="required">Contact Number (Mobile)</label><input type="tel" id="contact_number" required></div>
         <div class="form-field"><label>Email Address</label><input type="email" id="email" placeholder="parent@example.com"></div>
         <div class="form-field"><label>WhatsApp Number</label><input type="tel" id="whatsapp_number"></div>
-        <div class="form-field checkbox-group"><input type="checkbox" id="whatsapp_consent"><label>I consent to receive workshop updates on WhatsApp</label></div>
-        <div class="form-field"><label>Inquiry For</label><select id="inquiry_for"><option value="3 Days Brain Gym Workshop (Age 4-7)">🧠 Age Group 4–7 Years</option><option value="3 Days Brain Gym Workshop (Age 8+)">🧠 Age Group 8+ Years</option><option value="3 Days Brain Gym Workshop - Both groups">⭐ Both Age Groups</option></select></div>
+        <div class="form-field checkbox-group"><input type="checkbox" id="whatsapp_consent"><label>I consent to receive updates on WhatsApp</label></div>
         <div class="form-field"><label>How did you hear about us?</label><select id="source_of_inquiry"><option value="Social Media">Social Media</option><option value="Google / Search">Google / Search</option><option value="Friend/Family">Referral</option><option value="School Promotion">School Promotion</option><option value="Other">Other</option></select></div>
-        <div class="form-field full-width"><label>Message / Questions (optional)</label><textarea id="message" rows="2"></textarea></div>
+        <div class="form-field full-width"><label>Message / Questions (optional)</label><textarea id="message" rows="2" placeholder="Any specific queries about Brain Gym or WonderNest courses..."></textarea></div>
       </div>
-      <button type="submit" id="submitBtn" style="margin-top: 1rem;">🚀 Submit & Get Confirmation Message →</button>
-      <p style="margin-top: 1rem; font-size: 0.75rem; color:#5D7B9F;">✅ After submitting, you'll receive a confirmation message on screen & a notification will be sent to our team. We'll contact you within 24h.</p>
+      <button type="submit" id="submitBtn" style="margin-top: 1rem;">🚀 Submit & Get Confirmation →</button>
+      <p style="margin-top: 1rem; font-size: 0.75rem; color:#5D7B9F;">✅ After submitting, you'll receive a confirmation message & our team will contact you within 24h.</p>
     </form>
   </div>
 
-  <!-- Benefits & Details Section -->
+  <!-- Benefits Section (combined) -->
   <div id="benefits">
     <div class="card">
-      <div class="section-title">🌟 Why Brain Gym + Abacus?</div>
+      <div class="section-title">🌟 What We Offer</div>
       <div class="grid-2">
-        <div class="benefit-card"><h3>🧮 Faster Calculation</h3><p>Abacus trains both hemispheres, boosting mental math speed by 3x.</p></div>
-        <div class="benefit-card"><h3>🤸 Brain Gym Exercises</h3><p>Simple movements that enhance focus, memory & coordination.</p></div>
-        <div class="benefit-card"><h3>📈 Age 4–7 & 8+</h3><p>Customized curriculum for young learners & advanced students.</p></div>
-        <div class="benefit-card"><h3>🏆 3-Day Workshop</h3><p>Intensive, fun, and result-oriented – limited batch size.</p></div>
+        <div class="benefit-card"><h3>🧮 BrainCity Abacus</h3><p>3-Day Brain Gym Workshop: mental math, focus & cognitive skills for ages 4-7 and 8+.</p></div>
+        <div class="benefit-card"><h3>🦅 WonderNest Phoenix</h3><p>Personality development, public speaking, confidence building for young leaders.</p></div>
+        <div class="benefit-card"><h3>📖 WonderNest Grammar</h3><p>Master English grammar, sentence structure, creative writing for academic excellence.</p></div>
+        <div class="benefit-card"><h3>✍️ WonderNest Handwriting</h3><p>Improve legibility, speed, and presentation through structured practice.</p></div>
       </div>
     </div>
   </div>
@@ -344,29 +359,14 @@
     <div class="contact-info">
       <span>📞 +91 6352372744</span>  <span>✉️ poojakhatri519@gmail.com</span>  <span>📍 Online & Offline batches</span>
     </div>
-    <p style="margin-top: 1rem; color:#5D7B9F;">Our team will reach out after registration. Secure your spot now!</p>
+    <p style="margin-top: 1rem; color:#5D7B9F;">One form for all programs – we'll guide you to the right course.</p>
   </div>
 
-  <!-- ADMIN PANEL (Hidden from public, requires login) -->
-  <div class="admin-panel" id="adminPanel" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-      <h3 style="color:#2C3E66;">🔐 Admin Dashboard – Leads Management</h3>
-      <button id="logoutAdminBtn" class="btn-outline" style="background:transparent; border:1px solid #E67E5E; color:#E67E5E;">🚪 Logout</button>
-    </div>
-    <div id="adminControls">
-      <div class="leads-table-wrapper">
-        <table id="leadsTable">
-          <thead><tr><th>Student</th><th>Parent</th><th>Contact</th><th>Email</th><th>Age</th><th>Workshop</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
-          <tbody id="leadsTbody"><tr><td colspan="9" style="text-align:center;">🔒 Admin login required to view leads</td></tr>
-        </tbody>
-      </table>
-      </div>
-      <div id="leadsCountInfo" style="margin-top: 10px;"></div>
-    </div>
-  </div>
+  <!-- Hidden Admin Panel (not used, login handled via separate page) -->
+  <div id="adminPanel" style="display: none;"></div>
 
   <footer>
-    <p>© 2025 BrainCity Abacus Program – 3 Days Brain Gym Workshop | Privacy assured</p>
+    <p>© 2025 BrainCity Abacus & WonderNest – Empowering young minds | Privacy assured</p>
   </footer>
 </div>
 
@@ -378,15 +378,35 @@
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const TABLE_NAME = 'inquiries';
 
-  // ---------- DOM Elements ----------
+  // DOM Elements
   const form = document.getElementById('leadForm');
   const submitBtn = document.getElementById('submitBtn');
-  const adminPanel = document.getElementById('adminPanel');
-  const leadsTbody = document.getElementById('leadsTbody');
-  const leadsCountSpan = document.getElementById('leadsCountInfo');
   const dobInput = document.getElementById('date_of_birth');
   const ageDisplay = document.getElementById('age_display');
   const ageHidden = document.getElementById('age_hidden');
+  const inquiryForHidden = document.getElementById('inquiry_for');
+  const programOptions = document.querySelectorAll('.program-option');
+
+  // Program selection UI
+  function setActiveProgram(value) {
+    programOptions.forEach(opt => {
+      if (opt.getAttribute('data-value') === value) {
+        opt.classList.add('selected');
+      } else {
+        opt.classList.remove('selected');
+      }
+    });
+    inquiryForHidden.value = value;
+  }
+
+  programOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = opt.getAttribute('data-value');
+      setActiveProgram(val);
+    });
+  });
+  // Set default selected
+  setActiveProgram('BrainCity: 3-Day Brain Gym Workshop (Age 4-7)');
 
   // Helper: age from DOB
   function computeAge(dobStr) {
@@ -419,19 +439,20 @@
     }
   }
 
-  // ---------- Send "Confirmation Message" to lead (simulated + email notification to admin) ----------
-  async function sendConfirmationAndNotify(leadData, userEmail) {
-    showFeedback(`🎉 Thank you ${leadData.student_name}! A confirmation message has been sent to your email (if provided) and our team will contact you soon via WhatsApp/Phone.`, 'success', 'formFeedback');
+  // Send confirmation and notify admin (email)
+  async function sendConfirmationAndNotify(leadData) {
+    showFeedback(`🎉 Thank you ${leadData.student_name}! Your registration for ${leadData.inquiry_for} is received. We'll contact you shortly.`, 'success', 'formFeedback');
     
     try {
       const emailContent = `
-        New Lead from BrainCity Workshop:
+        New Lead from BrainCity/WonderNest:
+        Program: ${leadData.inquiry_for}
         Student: ${leadData.student_name}
         Parent: ${leadData.parent_name}
         Contact: ${leadData.contact_number}
         Email: ${leadData.email || 'Not provided'}
         Age: ${leadData.age || 'N/A'}
-        Workshop: ${leadData.inquiry_for}
+        School: ${leadData.school_name || 'N/A'}
         Source: ${leadData.source_of_inquiry}
         Message: ${leadData.message || '---'}
       `;
@@ -442,17 +463,13 @@
           name: leadData.parent_name,
           email: leadData.email || 'no-email@lead.com',
           message: emailContent,
-          _subject: `🔔 New Brain Gym Lead: ${leadData.student_name}`
+          _subject: `🔔 New Lead: ${leadData.inquiry_for} - ${leadData.student_name}`
         })
-      }).catch(e => console.warn('Email notification error (non-critical):', e));
-    } catch (err) { console.log("Notification not sent (optional)"); }
-    
-    if (userEmail) {
-      console.log(`Demo: confirmation email would be sent to ${userEmail}`);
-    }
+      }).catch(e => console.warn('Email notification optional error:', e));
+    } catch (err) { console.log("Notification not critical"); }
   }
 
-  // ---------- SUBMIT LEAD ----------
+  // Submit lead
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
@@ -463,7 +480,7 @@
     const contact_number = document.getElementById('contact_number').value.trim();
     if (!student_name || !parent_name || !contact_number) {
       showFeedback('❌ Student name, parent name and contact number are required.', 'error', 'formFeedback');
-      submitBtn.disabled = false; submitBtn.innerText = '🚀 Submit & Get Confirmation Message →';
+      submitBtn.disabled = false; submitBtn.innerText = '🚀 Submit & Get Confirmation →';
       return;
     }
     let age = ageHidden.value ? parseInt(ageHidden.value) : null;
@@ -478,7 +495,7 @@
       email: document.getElementById('email').value.trim() || null,
       whatsapp_number: document.getElementById('whatsapp_number').value.trim() || null,
       whatsapp_consent: document.getElementById('whatsapp_consent').checked,
-      inquiry_for: document.getElementById('inquiry_for').value,
+      inquiry_for: inquiryForHidden.value,
       source_of_inquiry: document.getElementById('source_of_inquiry').value,
       message: document.getElementById('message').value.trim() || null,
       status: 'new',
@@ -489,125 +506,39 @@
     try {
       const { error } = await supabase.from(TABLE_NAME).insert([payload]);
       if (error) throw error;
-      
-      await sendConfirmationAndNotify(payload, payload.email);
-      
+      await sendConfirmationAndNotify(payload);
       form.reset();
       ageDisplay.value = ''; ageHidden.value = ''; dobInput.value = '';
       document.getElementById('whatsapp_consent').checked = false;
-      
-      // If admin is logged in (though not used now), refresh leads table
-      if (adminPanel.style.display !== 'none' && window.isAdminLoggedIn) {
-        fetchAllLeadsForAdmin();
-      }
+      // Reset program selection to default
+      setActiveProgram('BrainCity: 3-Day Brain Gym Workshop (Age 4-7)');
+      // Reset other fields to empty
+      document.getElementById('student_name').value = '';
+      document.getElementById('parent_name').value = '';
+      document.getElementById('school_name').value = '';
+      document.getElementById('standard').value = '';
+      document.getElementById('contact_number').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('whatsapp_number').value = '';
+      document.getElementById('message').value = '';
     } catch (err) {
       showFeedback(`❌ Submission failed: ${err.message || 'Network error'}`, 'error', 'formFeedback');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerText = '🚀 Submit & Get Confirmation Message →';
+      submitBtn.innerText = '🚀 Submit & Get Confirmation →';
     }
   });
 
-  // ---------- ADMIN LOGIC (NOW REDIRECTS TO login.html) ----------
-  // The floating button will open the separate login page instead of inline admin.
-  let isAdminLoggedIn = false;
-  
-  // Function to fetch leads (kept for completeness but not used because admin panel is hidden)
-  async function fetchAllLeadsForAdmin() {
-    if (!isAdminLoggedIn) return;
-    leadsTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Loading leads...</td></tr>';
-    try {
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .select('id, student_name, parent_name, contact_number, email, age, inquiry_for, status, created_at')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        leadsTbody.innerHTML = '<tr><td colspan="9">📭 No leads yet.</td></tr>';
-        leadsCountSpan.innerText = 'Total: 0';
-        return;
-      }
-      leadsTbody.innerHTML = '';
-      data.forEach(lead => {
-        const row = leadsTbody.insertRow();
-        row.insertCell(0).innerText = lead.student_name || '—';
-        row.insertCell(1).innerText = lead.parent_name || '—';
-        row.insertCell(2).innerText = lead.contact_number || '—';
-        row.insertCell(3).innerText = lead.email || '—';
-        row.insertCell(4).innerText = lead.age ? `${lead.age} yrs` : '—';
-        row.insertCell(5).innerText = lead.inquiry_for || 'Workshop';
-        
-        const statusCell = row.insertCell(6);
-        const statusSelect = document.createElement('select');
-        statusSelect.className = 'status-select';
-        ['new', 'contacted', 'enrolled', 'lost'].forEach(opt => {
-          const option = document.createElement('option');
-          option.value = opt;
-          option.textContent = opt.toUpperCase();
-          if (lead.status === opt) option.selected = true;
-          statusSelect.appendChild(option);
-        });
-        statusSelect.addEventListener('change', async (e) => {
-          const newStatus = e.target.value;
-          const { error: updateErr } = await supabase.from(TABLE_NAME).update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', lead.id);
-          if (!updateErr) fetchAllLeadsForAdmin();
-          else alert('Error updating status');
-        });
-        statusCell.appendChild(statusSelect);
-        
-        row.insertCell(7).innerText = lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN') : '—';
-        const delCell = row.insertCell(8);
-        const delBtn = document.createElement('button');
-        delBtn.innerText = '🗑';
-        delBtn.className = 'delete-btn';
-        delBtn.onclick = async () => {
-          if (confirm(`Delete lead for ${lead.student_name}?`)) {
-            await supabase.from(TABLE_NAME).delete().eq('id', lead.id);
-            fetchAllLeadsForAdmin();
-          }
-        };
-        delCell.appendChild(delBtn);
-      });
-      leadsCountSpan.innerText = `📊 Total leads: ${data.length}`;
-    } catch (err) {
-      leadsTbody.innerHTML = `<tr><td colspan="9">⚠️ Error: ${err.message}</td></tr>`;
-    }
-  }
-
-  // Create floating button that redirects to login.html
-  const adminToggleBtn = document.createElement('button');
-  adminToggleBtn.innerText = '🔒 Admin Login';
-  adminToggleBtn.style.position = 'fixed';
-  adminToggleBtn.style.bottom = '20px';
-  adminToggleBtn.style.right = '20px';
-  adminToggleBtn.style.zIndex = '999';
-  adminToggleBtn.style.background = '#2C3E66';
-  adminToggleBtn.style.padding = '10px 18px';
-  adminToggleBtn.style.borderRadius = '40px';
-  adminToggleBtn.style.fontSize = '0.8rem';
-  adminToggleBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-  adminToggleBtn.style.cursor = 'pointer';
-  adminToggleBtn.style.border = 'none';
-  adminToggleBtn.style.color = 'white';
-  document.body.appendChild(adminToggleBtn);
-  
-  // CHANGE: Clicking the button now opens login.html (separate admin login page)
-  adminToggleBtn.addEventListener('click', () => {
+  // Floating admin button redirects to login.html (separate secure admin page)
+  const adminBtn = document.createElement('button');
+  adminBtn.innerHTML = '🔐';
+  adminBtn.className = 'floating-admin';
+  adminBtn.title = 'Admin Login';
+  adminBtn.style.cursor = 'pointer';
+  document.body.appendChild(adminBtn);
+  adminBtn.addEventListener('click', () => {
     window.location.href = 'login.html';
   });
-  
-  // Initially hide admin panel (it's not used anymore but kept for structure)
-  adminPanel.style.display = 'none';
-  
-  // Logout button inside admin panel (if ever shown) – redirect to login
-  const logoutBtn = document.getElementById('logoutAdminBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      window.location.href = 'login.html';
-    });
-  }
-  
-  window.isAdminLoggedIn = false;
 })();
 </script>
 </body>
