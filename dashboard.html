@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Lead Manager</title>
+    <title>Admin Suite | Lead Manager + CRUD + PDF Forms</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * {
             margin: 0;
@@ -26,7 +27,6 @@
             box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        /* LIGHTER HEADER - logo friendly */
         .dashboard-header {
             background: #FFFFFF;
             padding: 1rem 2rem;
@@ -52,7 +52,7 @@
             font-size: 1.4rem;
             font-weight: 700;
         }
-        .logout-btn {
+        .logout-btn, .add-lead-btn {
             background: #E67E5E;
             color: white;
             border: none;
@@ -63,14 +63,40 @@
             transition: 0.2s;
             font-family: 'Montserrat', sans-serif;
         }
-        .logout-btn:hover {
-            background: #c55a3a;
-            transform: translateY(-1px);
+        .add-lead-btn {
+            background: #2C3E66;
+            margin-right: 0.5rem;
+        }
+        .add-lead-btn:hover {
+            background: #1f2e52;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            padding: 1.5rem 2rem 0.5rem 2rem;
+            background: white;
+        }
+        .stat-card {
+            background: #F8FAFE;
+            border-radius: 1.2rem;
+            padding: 1rem 1.2rem;
+            border-left: 5px solid #E67E5E;
+        }
+        .stat-card h4 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #5D7B9F;
+            margin-bottom: 0.5rem;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2C3E66;
         }
         .controls-bar {
-            padding: 1.5rem 2rem;
-            background: #FFFFFF;
-            border-bottom: 1px solid #E2E8F0;
+            padding: 1rem 2rem 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,11 +108,7 @@
             align-items: center;
             gap: 0.8rem;
         }
-        .filter-group label {
-            font-weight: 600;
-            color: #2D2F36;
-        }
-        select, .export-btn {
+        select, .export-btn, .refresh-btn {
             padding: 0.5rem 1rem;
             border-radius: 2rem;
             border: 1px solid #D9B48B;
@@ -95,23 +117,10 @@
             font-weight: 500;
             cursor: pointer;
         }
-        .export-btn {
+        .export-btn, .refresh-btn {
             background: #2C3E66;
             color: white;
             border: none;
-            transition: 0.2s;
-        }
-        .export-btn:hover {
-            background: #1f2e52;
-        }
-        .refresh-btn {
-            background: #5D7B9F;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            font-family: 'Montserrat', sans-serif;
         }
         .table-wrapper {
             overflow-x: auto;
@@ -127,16 +136,11 @@
             color: #2C3E66;
             padding: 0.9rem 0.8rem;
             text-align: left;
-            font-weight: 700;
             border-bottom: 2px solid #D9B48B;
         }
         td {
             padding: 0.8rem;
             border-bottom: 1px solid #EDF2F7;
-            vertical-align: middle;
-        }
-        tr:hover {
-            background: #F9FBFD;
         }
         .action-buttons {
             display: flex;
@@ -150,12 +154,12 @@
             font-size: 1.2rem;
             padding: 0.2rem;
             border-radius: 8px;
-            transition: 0.2s;
         }
         .btn-icon:hover {
             background: #E2E8F0;
         }
-        .notes-modal, .email-modal {
+        /* Modal with brand header */
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -169,54 +173,98 @@
         }
         .modal-content {
             background: white;
-            padding: 2rem;
             border-radius: 1.5rem;
             width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 30px -10px rgba(0,0,0,0.2);
+            max-width: 750px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
         }
-        .modal-content h3 {
+        .modal-header {
+            background: linear-gradient(135deg, #2C3E66 0%, #1a2a4a 100%);
+            padding: 1rem 1.5rem;
+            border-radius: 1.5rem 1.5rem 0 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+        }
+        .modal-header img {
+            height: 45px;
+            background: white;
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-weight: 700;
+            color: white;
+        }
+        .modal-body {
+            padding: 1.5rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
             margin-bottom: 1rem;
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .form-field label {
+            font-weight: 600;
+            font-size: 0.8rem;
             color: #2C3E66;
         }
-        .modal-content textarea, .modal-content input {
-            width: 100%;
-            padding: 0.7rem;
-            margin: 0.5rem 0 1rem;
-            border: 1px solid #D9B48B;
+        .form-field input, .form-field select, .form-field textarea {
+            padding: 0.6rem;
             border-radius: 1rem;
+            border: 1px solid #D9B48B;
             font-family: 'Montserrat', sans-serif;
         }
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
             gap: 0.8rem;
-        }
-        .modal-buttons button {
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
+            margin-top: 1.5rem;
         }
         .save-btn {
             background: #2C3E66;
             color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            border: none;
         }
         .cancel-btn {
             background: #E2E8F0;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            border: none;
         }
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.2rem;
-            color: #5D7B9F;
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2C3E66;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 500;
+            z-index: 1100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.3s ease;
         }
-        .status-select {
-            padding: 0.3rem;
-            border-radius: 1rem;
-            border: 1px solid #D9B48B;
-            font-size: 0.75rem;
+        .toast.success { background: #2E7D32; }
+        .toast.error { background: #c0392b; }
+        .toast.info { background: #5D7B9F; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         footer {
             padding: 1rem 2rem;
@@ -226,26 +274,34 @@
             border-top: 1px solid #EDF2F7;
         }
         @media (max-width: 700px) {
-            body { padding: 0.5rem; }
-            th, td { font-size: 0.7rem; padding: 0.5rem; }
-            .action-buttons { flex-direction: column; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
-    <!-- Lighter header: white background, dark text -->
     <div class="dashboard-header">
         <div class="logo-area">
             <img src="abacus_logo.png" alt="Logo" onerror="this.src='https://placehold.co/50x50'">
-            <h1>Lead Management Dashboard</h1>
+            <h1>Lead Manager Pro + CRUD</h1>
         </div>
-        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+        <div>
+            <button class="add-lead-btn" id="addLeadBtn">➕ Add New Lead</button>
+            <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><h4>📊 Total Leads</h4><div class="stat-number" id="totalLeads">—</div></div>
+        <div class="stat-card"><h4>🆕 New (24h)</h4><div class="stat-number" id="newLeads24h">—</div></div>
+        <div class="stat-card"><h4>📈 Conversion</h4><div class="stat-number" id="conversionRate">—%</div></div>
+        <div class="stat-card"><h4>📞 Contacted</h4><div class="stat-number" id="contactedCount">—</div></div>
+        <div class="stat-card"><h4>✨ Converted</h4><div class="stat-number" id="convertedCount">—</div></div>
     </div>
 
     <div class="controls-bar">
         <div class="filter-group">
-            <label>📊 Filter by status:</label>
+            <label>📊 Filter:</label>
             <select id="statusFilter">
                 <option value="all">All Leads</option>
                 <option value="new">New</option>
@@ -255,318 +311,405 @@
             </select>
             <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
         </div>
-        <button class="export-btn" id="exportExcelBtn">📎 Export to Excel</button>
+        <button class="export-btn" id="exportExcelBtn">📎 Export Excel</button>
     </div>
 
     <div class="table-wrapper" id="tableWrapper">
-        <div class="loading">Loading inquiries...</div>
+        <div class="loading">Loading leads...</div>
     </div>
-    <footer>
-        🔐 Secure Admin Panel | Manage leads, update status, add notes & email directly
-    </footer>
+    <footer>🔐 Full CRUD | Click ✏️ to edit, 🗑️ to delete, 📄 to generate PDF admission form</footer>
 </div>
 
-<!-- Notes Modal -->
-<div id="notesModal" class="notes-modal" style="display: none;">
+<!-- Modal for Add/Edit Lead with Brand Header -->
+<div id="leadModal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h3>✏️ Update Notes</h3>
-        <textarea id="notesText" rows="4" placeholder="Add or edit notes..."></textarea>
-        <div class="modal-buttons">
-            <button class="cancel-btn" id="closeNotesModal">Cancel</button>
-            <button class="save-btn" id="saveNotesBtn">Save Notes</button>
+        <div class="modal-header">
+            <img src="abacus_logo.png" alt="BrainCity" onerror="this.src='https://placehold.co/50x50'">
+            <h3 id="modalTitle">Add New Lead</h3>
+        </div>
+        <div class="modal-body">
+            <form id="leadForm">
+                <div class="form-row">
+                    <div class="form-field"><label>Student Name *</label><input type="text" id="student_name" required></div>
+                    <div class="form-field"><label>Parent Name *</label><input type="text" id="parent_name" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Date of Birth</label><input type="date" id="date_of_birth"></div>
+                    <div class="form-field"><label>Age</label><input type="number" id="age"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>School Name</label><input type="text" id="school_name"></div>
+                    <div class="form-field"><label>Standard</label><input type="text" id="standard"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Contact Number *</label><input type="text" id="contact_number" required></div>
+                    <div class="form-field"><label>Email</label><input type="email" id="email"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>WhatsApp Number</label><input type="text" id="whatsapp_number"></div>
+                    <div class="form-field"><label>WhatsApp Consent</label><select id="whatsapp_consent"><option value="false">No</option><option value="true">Yes</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field"><label>Inquiry For</label><input type="text" id="inquiry_for" placeholder="e.g., Brain Gym, Grammar"></div>
+                    <div class="form-field"><label>Source</label><input type="text" id="source_of_inquiry"></div>
+                </div>
+                <div class="form-field"><label>Message</label><textarea id="message" rows="2"></textarea></div>
+                <div class="form-field"><label>Status</label><select id="status"><option value="new">New</option><option value="contacted">Contacted</option><option value="converted">Converted</option><option value="closed">Closed</option></select></div>
+                <div class="form-field"><label>Notes</label><textarea id="notes" rows="2"></textarea></div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-btn" id="closeModalBtn">Cancel</button>
+                    <button type="submit" class="save-btn">Save Lead</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Email Modal -->
-<div id="emailModal" class="email-modal" style="display: none;">
-    <div class="modal-content">
-        <h3>📧 Send Email</h3>
-        <label>To:</label>
-        <input type="email" id="emailTo" readonly>
-        <label>Subject:</label>
-        <input type="text" id="emailSubject" placeholder="Subject">
-        <label>Message:</label>
-        <textarea id="emailBody" rows="5" placeholder="Type your message..."></textarea>
-        <div class="modal-buttons">
-            <button class="cancel-btn" id="closeEmailModal">Cancel</button>
-            <button class="save-btn" id="sendEmailBtn">Send via Email Client</button>
+<!-- Hidden PDF Template - Will be populated dynamically with logo dataURL -->
+<div id="pdfTemplate" style="display: none;">
+    <div id="admissionForm" style="font-family: 'Montserrat', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; background: white; border: 1px solid #ddd;">
+        <div id="pdfHeader" style="display: flex; align-items: center; gap: 1rem; border-bottom: 3px solid #E67E5E; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <!-- Logo will be injected here as img with dataURL -->
+            <div id="pdfLogoContainer"></div>
+            <div>
+                <h1 style="color: #2C3E66; margin: 0;">BrainCity Abacus</h1>
+                <p style="color: #5D7B9F; margin: 0;">Empowering young minds</p>
+            </div>
         </div>
-        <small>Note: Opens your default email client (mailto:).</small>
+        <h2 style="color: #E67E5E; text-align: center; margin-bottom: 1rem;">✨ Admission / Enrollment Form ✨</h2>
+        <div id="pdfContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;"></div>
+        <div style="margin-top: 2rem; border-top: 2px dashed #D9B48B; padding-top: 1rem; text-align: center; font-size: 0.75rem; color: #5D7B9F;">
+            Generated on <span id="pdfDate"></span> | BrainCity Abacus Program
+        </div>
     </div>
 </div>
 
 <script>
+(function() {
+    // ---------- SUPABASE CLIENT ----------
     const SUPABASE_URL = "https://mskbwsxezirjvobgxifj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    
     let currentLeads = [];
     let currentFilter = "all";
-    let selectedInquiryId = null;
-    let selectedEmail = "";
+    let editId = null;
 
+    // DOM elements
     const tableWrapper = document.getElementById("tableWrapper");
     const statusFilter = document.getElementById("statusFilter");
     const refreshBtn = document.getElementById("refreshBtn");
     const exportBtn = document.getElementById("exportExcelBtn");
     const logoutBtn = document.getElementById("logoutBtn");
+    const addLeadBtn = document.getElementById("addLeadBtn");
+    const leadModal = document.getElementById("leadModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const leadForm = document.getElementById("leadForm");
 
-    const notesModal = document.getElementById("notesModal");
-    const notesTextarea = document.getElementById("notesText");
-    const saveNotesBtn = document.getElementById("saveNotesBtn");
-    const closeNotesModal = document.getElementById("closeNotesModal");
-    
-    const emailModal = document.getElementById("emailModal");
-    const emailTo = document.getElementById("emailTo");
-    const emailSubject = document.getElementById("emailSubject");
-    const emailBody = document.getElementById("emailBody");
-    const sendEmailBtn = document.getElementById("sendEmailBtn");
-    const closeEmailModal = document.getElementById("closeEmailModal");
+    // Stats elements
+    const totalLeadsSpan = document.getElementById("totalLeads");
+    const newLeads24hSpan = document.getElementById("newLeads24h");
+    const conversionRateSpan = document.getElementById("conversionRate");
+    const contactedCountSpan = document.getElementById("contactedCount");
+    const convertedCountSpan = document.getElementById("convertedCount");
 
-    function showLoading() {
-        tableWrapper.innerHTML = '<div class="loading">📋 Loading leads...</div>';
+    // ---------- Toast notification ----------
+    function showToast(message, type = 'info') {
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) existingToast.remove();
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
+    // ---------- CRUD Functions ----------
     async function fetchLeads() {
-        showLoading();
-        const { data, error } = await supabaseClient
-            .from("inquiries")
-            .select("*")
-            .order("created_at", { ascending: false });
-        if (error) {
-            console.error("Fetch error:", error);
-            tableWrapper.innerHTML = `<div class="loading">❌ Error loading leads: ${error.message}</div>`;
-            return [];
-        }
+        const { data, error } = await supabaseClient.from("inquiries").select("*").order("created_at", { ascending: false });
+        if (error) throw error;
         return data || [];
     }
 
+    function computeStats(leads) {
+        const total = leads.length;
+        const oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+        const new24h = leads.filter(l => l.created_at && new Date(l.created_at) >= oneDayAgo).length;
+        const contacted = leads.filter(l => l.status === 'contacted').length;
+        const converted = leads.filter(l => l.status === 'converted').length;
+        const conversionRate = total === 0 ? 0 : ((converted / total) * 100).toFixed(1);
+        return { total, new24h, contacted, converted, conversionRate };
+    }
+
+    function updateStats(leads) {
+        const s = computeStats(leads);
+        totalLeadsSpan.innerText = s.total;
+        newLeads24hSpan.innerText = s.new24h;
+        contactedCountSpan.innerText = s.contacted;
+        convertedCountSpan.innerText = s.converted;
+        conversionRateSpan.innerText = `${s.conversionRate}%`;
+    }
+
     async function renderDashboard() {
-        const leads = await fetchLeads();
-        currentLeads = leads;
-        applyFilterAndRender();
+        try {
+            currentLeads = await fetchLeads();
+            updateStats(currentLeads);
+            applyFilterAndRender();
+            showToast("Dashboard refreshed", "success");
+        } catch(e) { 
+            tableWrapper.innerHTML = `<div class="loading">Error: ${e.message}</div>`;
+            showToast("Failed to load data", "error");
+        }
     }
 
     function applyFilterAndRender() {
         let filtered = [...currentLeads];
-        if (currentFilter !== "all") {
-            filtered = filtered.filter(lead => lead.status === currentFilter);
-        }
+        if (currentFilter !== "all") filtered = filtered.filter(l => l.status === currentFilter);
         renderTable(filtered);
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
 
     function renderTable(leads) {
-        if (!leads.length) {
-            tableWrapper.innerHTML = '<div class="loading">✨ No leads found for this status.</div>';
-            return;
-        }
+        if (!leads.length) { tableWrapper.innerHTML = '<div class="loading">✨ No leads found.</div>'; return; }
         const html = `
             <table>
-                <thead>
-                    <tr><th>Name</th><th>Parent</th><th>Contact</th><th>Email</th><th>Standard</th><th>Status</th><th>Notes</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    ${leads.map(lead => `
-                        <tr>
-                            <td><strong>${escapeHtml(lead.student_name)}</strong><br><small>DOB: ${lead.date_of_birth || '—'}</small></td>
-                            <td>${escapeHtml(lead.parent_name)}</td>
-                            <td>${escapeHtml(lead.contact_number)}<br><small>${lead.whatsapp_number ? 'WA: '+escapeHtml(lead.whatsapp_number) : ''}</small></td>
-                            <td>${lead.email ? `<a href="mailto:${lead.email}">${escapeHtml(lead.email)}</a>` : '—'}</td>
-                            <td>${escapeHtml(lead.standard || '—')}<br><small>${escapeHtml(lead.school_name || '')}</small></td>
-                            <td>
-                                <select class="status-select" data-id="${lead.id}" data-current="${lead.status || 'new'}">
-                                    <option value="new" ${lead.status === 'new' ? 'selected' : ''}>🟠 New</option>
-                                    <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>🟡 Contacted</option>
-                                    <option value="converted" ${lead.status === 'converted' ? 'selected' : ''}>🟢 Converted</option>
-                                    <option value="closed" ${lead.status === 'closed' ? 'selected' : ''}>⚫ Closed</option>
-                                </select>
-                            </td>
-                            <td><button class="btn-icon notes-btn" data-id="${lead.id}" data-notes="${escapeHtml(lead.notes || '')}" title="Edit notes">📝</button> ${lead.notes ? `<span title="${escapeHtml(lead.notes)}">✍️</span>` : ''}</td>
-                            <td class="action-buttons">
-                                <button class="btn-icon email-action" data-email="${lead.email || ''}" data-name="${escapeHtml(lead.student_name)}" title="Send email">📧</button>
-                                <button class="btn-icon view-details" data-lead='${JSON.stringify(lead).replace(/'/g, "&#39;")}' title="View details">🔍</button>
-                            </td>
-                        </tr>
-                    `).join('')}
+                <thead><tr><th>Student</th><th>Parent</th><th>Contact</th><th>Email</th><th>Program</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>${leads.map(lead => `
+                    <tr>
+                        <td><strong>${escapeHtml(lead.student_name)}</strong><br><small>DOB: ${lead.date_of_birth || '—'}</small></td>
+                        <td>${escapeHtml(lead.parent_name)}</td>
+                        <td>${escapeHtml(lead.contact_number)}<br><small>${lead.whatsapp_number ? 'WA: '+escapeHtml(lead.whatsapp_number) : ''}</small></td>
+                        <td>${lead.email ? escapeHtml(lead.email) : '—'}</td>
+                        <td>${escapeHtml(lead.inquiry_for || '—')}</td>
+                        <td><select class="status-select" data-id="${lead.id}">${['new','contacted','converted','closed'].map(s => `<option value="${s}" ${lead.status===s?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></td>
+                        <td class="action-buttons">
+                            <button class="btn-icon edit-lead" data-id="${lead.id}" data-lead='${JSON.stringify(lead).replace(/'/g, "&#39;")}' title="Edit">✏️</button>
+                            <button class="btn-icon delete-lead" data-id="${lead.id}" data-name="${escapeHtml(lead.student_name)}" title="Delete">🗑️</button>
+                            <button class="btn-icon pdf-lead" data-id="${lead.id}" title="PDF Admission Form">📄</button>
+                        </td>
+                    </tr>`).join('')}
                 </tbody>
             </table>
         `;
         tableWrapper.innerHTML = html;
         
-        document.querySelectorAll('.status-select').forEach(select => {
-            select.addEventListener('change', async (e) => {
-                const newStatus = e.target.value;
-                const leadId = select.getAttribute('data-id');
-                await updateStatus(leadId, newStatus);
-                await renderDashboard();
+        // Status change
+        document.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('change', async (e) => {
+                await supabaseClient.from("inquiries").update({ status: e.target.value, updated_at: new Date() }).eq('id', sel.dataset.id);
+                showToast("Status updated", "success");
+                renderDashboard();
             });
         });
-        document.querySelectorAll('.notes-btn').forEach(btn => {
+        // Edit buttons
+        document.querySelectorAll('.edit-lead').forEach(btn => {
             btn.addEventListener('click', () => {
-                const id = btn.getAttribute('data-id');
-                const notes = btn.getAttribute('data-notes') || '';
-                openNotesModal(id, notes);
+                const lead = JSON.parse(btn.getAttribute('data-lead'));
+                openEditModal(lead);
             });
         });
-        document.querySelectorAll('.email-action').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const email = btn.getAttribute('data-email');
-                const name = btn.getAttribute('data-name');
-                if (!email) {
-                    alert("No email address for this lead.");
-                    return;
+        // Delete buttons
+        document.querySelectorAll('.delete-lead').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm(`Delete ${btn.getAttribute('data-name')}?`)) {
+                    await supabaseClient.from("inquiries").delete().eq('id', btn.dataset.id);
+                    showToast("Lead deleted", "success");
+                    renderDashboard();
                 }
-                openEmailModal(email, name);
             });
         });
-        document.querySelectorAll('.view-details').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const leadData = btn.getAttribute('data-lead');
-                try {
-                    const lead = JSON.parse(leadData);
-                    alert(`📋 Lead Details:\nStudent: ${lead.student_name}\nParent: ${lead.parent_name}\nContact: ${lead.contact_number}\nEmail: ${lead.email || 'N/A'}\nStandard: ${lead.standard || 'N/A'}\nSchool: ${lead.school_name || 'N/A'}\nInquiry: ${lead.inquiry_for || 'N/A'}\nSource: ${lead.source_of_inquiry || 'N/A'}\nMessage: ${lead.message || 'N/A'}\nNotes: ${lead.notes || 'None'}`);
-                } catch(e) { alert("Could not load details"); }
+        // PDF buttons
+        document.querySelectorAll('.pdf-lead').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const leadId = btn.dataset.id;
+                const lead = currentLeads.find(l => l.id === leadId);
+                if (lead) generatePDF(lead);
             });
         });
     }
 
-    async function updateStatus(id, newStatus) {
-        const { error } = await supabaseClient
-            .from('inquiries')
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
-            .eq('id', id);
-        if (error) {
-            console.error("Status update error:", error);
-            alert("Failed to update status.");
-        }
+    function openEditModal(lead) {
+        editId = lead.id;
+        modalTitle.innerText = "✏️ Edit Lead";
+        document.getElementById("student_name").value = lead.student_name || '';
+        document.getElementById("parent_name").value = lead.parent_name || '';
+        document.getElementById("date_of_birth").value = lead.date_of_birth || '';
+        document.getElementById("age").value = lead.age || '';
+        document.getElementById("school_name").value = lead.school_name || '';
+        document.getElementById("standard").value = lead.standard || '';
+        document.getElementById("contact_number").value = lead.contact_number || '';
+        document.getElementById("email").value = lead.email || '';
+        document.getElementById("whatsapp_number").value = lead.whatsapp_number || '';
+        document.getElementById("whatsapp_consent").value = lead.whatsapp_consent ? 'true' : 'false';
+        document.getElementById("inquiry_for").value = lead.inquiry_for || '';
+        document.getElementById("source_of_inquiry").value = lead.source_of_inquiry || '';
+        document.getElementById("message").value = lead.message || '';
+        document.getElementById("status").value = lead.status || 'new';
+        document.getElementById("notes").value = lead.notes || '';
+        leadModal.style.display = 'flex';
     }
 
-    async function updateNotes(id, notes) {
-        const { error } = await supabaseClient
-            .from('inquiries')
-            .update({ notes: notes, updated_at: new Date().toISOString() })
-            .eq('id', id);
-        if (error) {
-            console.error("Notes update error:", error);
-            alert("Failed to save notes.");
-            return false;
-        }
-        return true;
+    function resetModal() {
+        editId = null;
+        modalTitle.innerText = "➕ Add New Lead";
+        leadForm.reset();
+        document.getElementById("whatsapp_consent").value = 'false';
+        document.getElementById("status").value = 'new';
     }
 
-    function openNotesModal(id, currentNotes) {
-        selectedInquiryId = id;
-        notesTextarea.value = currentNotes;
-        notesModal.style.display = 'flex';
-    }
+    addLeadBtn.addEventListener('click', () => { resetModal(); leadModal.style.display = 'flex'; });
+    closeModalBtn.addEventListener('click', () => { leadModal.style.display = 'none'; });
+    window.addEventListener('click', (e) => { if (e.target === leadModal) leadModal.style.display = 'none'; });
 
-    function openEmailModal(email, studentName) {
-        selectedEmail = email;
-        emailTo.value = email;
-        emailSubject.value = `Regarding your inquiry - Abacus Academy`;
-        emailBody.value = `Dear ${studentName},\n\nThank you for your interest in Abacus Academy.\n\nBest regards,\nAdmin Team`;
-        emailModal.style.display = 'flex';
-    }
-
-    function exportToExcel() {
-        let dataToExport = [...currentLeads];
-        if (currentFilter !== "all") {
-            dataToExport = dataToExport.filter(lead => lead.status === currentFilter);
-        }
-        if (dataToExport.length === 0) {
-            alert("No data to export.");
+    leadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            student_name: document.getElementById("student_name").value.trim(),
+            parent_name: document.getElementById("parent_name").value.trim(),
+            date_of_birth: document.getElementById("date_of_birth").value || null,
+            age: parseInt(document.getElementById("age").value) || null,
+            school_name: document.getElementById("school_name").value.trim() || null,
+            standard: document.getElementById("standard").value.trim() || null,
+            contact_number: document.getElementById("contact_number").value.trim(),
+            email: document.getElementById("email").value.trim() || null,
+            whatsapp_number: document.getElementById("whatsapp_number").value.trim() || null,
+            whatsapp_consent: document.getElementById("whatsapp_consent").value === 'true',
+            inquiry_for: document.getElementById("inquiry_for").value.trim() || null,
+            source_of_inquiry: document.getElementById("source_of_inquiry").value.trim() || null,
+            message: document.getElementById("message").value.trim() || null,
+            status: document.getElementById("status").value,
+            notes: document.getElementById("notes").value.trim() || null,
+            updated_at: new Date().toISOString()
+        };
+        if (!payload.student_name || !payload.parent_name || !payload.contact_number) {
+            showToast("Please fill all required fields", "error");
             return;
         }
-        const worksheetData = dataToExport.map(lead => ({
-            'Student Name': lead.student_name,
-            'Parent Name': lead.parent_name,
-            'Date of Birth': lead.date_of_birth,
-            'Age': lead.age,
-            'School': lead.school_name,
-            'Standard': lead.standard,
-            'Contact Number': lead.contact_number,
-            'Email': lead.email,
-            'WhatsApp': lead.whatsapp_number,
-            'WhatsApp Consent': lead.whatsapp_consent ? 'Yes' : 'No',
-            'Inquiry For': lead.inquiry_for,
-            'Source': lead.source_of_inquiry,
-            'Message': lead.message,
-            'Status': lead.status,
-            'Notes': lead.notes,
-            'Created At': lead.created_at,
-        }));
-        const ws = XLSX.utils.json_to_sheet(worksheetData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Leads');
-        XLSX.writeFile(wb, `abacus_leads_${currentFilter}_${new Date().toISOString().slice(0,19)}.xlsx`);
+        if (editId) {
+            await supabaseClient.from("inquiries").update(payload).eq('id', editId);
+            showToast("Lead updated successfully", "success");
+        } else {
+            payload.created_at = new Date().toISOString();
+            await supabaseClient.from("inquiries").insert([payload]);
+            showToast("New lead added", "success");
+        }
+        leadModal.style.display = 'none';
+        renderDashboard();
+    });
+
+    // ---------- Helper: Convert image to dataURL to avoid tainting ----------
+    async function getLogoDataURL() {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // Attempt anonymous CORS (works if server allows)
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL('image/png');
+                resolve(dataURL);
+            };
+            img.onerror = () => {
+                // Fallback: return a text-based placeholder if logo fails
+                resolve(null);
+            };
+            img.src = "abacus_logo.png?" + new Date().getTime(); // cache buster
+        });
     }
 
-    statusFilter.addEventListener('change', (e) => {
-        currentFilter = e.target.value;
-        applyFilterAndRender();
-    });
-    refreshBtn.addEventListener('click', () => renderDashboard());
-    exportBtn.addEventListener('click', exportToExcel);
-    logoutBtn.addEventListener('click', async () => {
-        await supabaseClient.auth.signOut();
-        window.location.href = "login.html";
-    });
-    saveNotesBtn.addEventListener('click', async () => {
-        const newNotes = notesTextarea.value;
-        if (selectedInquiryId) {
-            await updateNotes(selectedInquiryId, newNotes);
-            notesModal.style.display = 'none';
-            await renderDashboard();
-        }
-    });
-    closeNotesModal.addEventListener('click', () => notesModal.style.display = 'none');
-    sendEmailBtn.addEventListener('click', () => {
-        if (!selectedEmail) return;
-        const subject = encodeURIComponent(emailSubject.value);
-        const body = encodeURIComponent(emailBody.value);
-        window.location.href = `mailto:${selectedEmail}?subject=${subject}&body=${body}`;
-        emailModal.style.display = 'none';
-    });
-    closeEmailModal.addEventListener('click', () => emailModal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === notesModal) notesModal.style.display = 'none';
-        if (e.target === emailModal) emailModal.style.display = 'none';
-    });
-
-    async function checkAuth() {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-            window.location.href = "login.html";
-            return false;
-        }
+    // ---------- PDF Generation with actual logo (no tainting) ----------
+    async function generatePDF(lead) {
+        showToast("Preparing PDF...", "info");
         try {
-            const { data: role } = await supabaseClient.rpc('get_user_role', { user_id: session.user.id });
-            if (role !== 'admin') {
-                await supabaseClient.auth.signOut();
-                window.location.href = "login.html";
-                return false;
+            const logoDataURL = await getLogoDataURL();
+            const templateDiv = document.getElementById('pdfTemplate').cloneNode(true);
+            templateDiv.style.display = 'block';
+            
+            // Inject logo
+            const logoContainer = templateDiv.querySelector('#pdfLogoContainer');
+            if (logoDataURL) {
+                const logoImg = document.createElement('img');
+                logoImg.src = logoDataURL;
+                logoImg.style.height = '60px';
+                logoImg.style.width = 'auto';
+                logoImg.style.objectFit = 'contain';
+                logoContainer.appendChild(logoImg);
+            } else {
+                // Fallback text logo
+                logoContainer.innerHTML = '<div style="background:#2C3E66; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-weight:800; font-size:1.5rem;">BC</div>';
             }
-        } catch(e) { console.warn(e); }
-        return true;
+            
+            const container = templateDiv.querySelector('#pdfContent');
+            container.innerHTML = '';
+            const fields = [
+                ['Student Name', lead.student_name], ['Parent/Guardian', lead.parent_name],
+                ['Date of Birth', lead.date_of_birth || '—'], ['Age', lead.age || '—'],
+                ['School', lead.school_name || '—'], ['Standard', lead.standard || '—'],
+                ['Contact Number', lead.contact_number], ['Email', lead.email || '—'],
+                ['WhatsApp', lead.whatsapp_number || '—'], ['WhatsApp Consent', lead.whatsapp_consent ? 'Yes' : 'No'],
+                ['Program Interested', lead.inquiry_for || '—'], ['Source', lead.source_of_inquiry || '—'],
+                ['Message', lead.message || '—'], ['Status', lead.status?.toUpperCase() || 'NEW'],
+                ['Admin Notes', lead.notes || '—']
+            ];
+            fields.forEach(([label, val]) => {
+                const div = document.createElement('div');
+                div.style.padding = '0.3rem';
+                div.style.borderBottom = '1px solid #eee';
+                div.innerHTML = `<strong style="color:#2C3E66;">${label}:</strong> <span style="color:#2D2F36;">${escapeHtml(String(val))}</span>`;
+                container.appendChild(div);
+            });
+            templateDiv.querySelector('#pdfDate').innerText = new Date().toLocaleString();
+            const element = templateDiv.querySelector('#admissionForm');
+            const opt = { 
+                margin: [0.5, 0.5, 0.5, 0.5], 
+                filename: `Admission_${lead.student_name.replace(/\s/g, '_')}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, logging: false, useCORS: false }, 
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
+            };
+            await html2pdf().set(opt).from(element).save();
+            showToast("PDF downloaded successfully", "success");
+            templateDiv.remove();
+        } catch (err) {
+            console.error("PDF error:", err);
+            showToast("PDF generation failed. Please try again.", "error");
+        }
     }
 
+    // Export Excel
+    function exportToExcel() {
+        let data = [...currentLeads];
+        if (currentFilter !== "all") data = data.filter(l => l.status === currentFilter);
+        if (!data.length) { showToast("No data to export", "error"); return; }
+        const wsData = data.map(l => ({
+            'Student': l.student_name, 'Parent': l.parent_name, 'DOB': l.date_of_birth, 'Age': l.age,
+            'School': l.school_name, 'Standard': l.standard, 'Contact': l.contact_number, 'Email': l.email,
+            'WhatsApp': l.whatsapp_number, 'Consent': l.whatsapp_consent ? 'Yes' : 'No',
+            'Inquiry': l.inquiry_for, 'Source': l.source_of_inquiry, 'Message': l.message,
+            'Status': l.status, 'Notes': l.notes, 'Created': l.created_at
+        }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), 'Leads');
+        XLSX.writeFile(wb, `leads_${currentFilter}_${new Date().toISOString().slice(0,19)}.xlsx`);
+        showToast("Export complete", "success");
+    }
+
+    statusFilter.addEventListener('change', (e) => { currentFilter = e.target.value; applyFilterAndRender(); });
+    refreshBtn.addEventListener('click', renderDashboard);
+    exportBtn.addEventListener('click', exportToExcel);
+    logoutBtn.addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = "login.html"; });
+
+    // Auth check
     (async () => {
-        const authed = await checkAuth();
-        if (authed) {
-            await renderDashboard();
-        }
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) window.location.href = "login.html";
+        else await renderDashboard();
     })();
+})();
 </script>
 </body>
 </html>
