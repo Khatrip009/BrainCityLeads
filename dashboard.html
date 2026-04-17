@@ -289,11 +289,6 @@
         @media (max-width: 700px) {
             .form-row { grid-template-columns: 1fr; }
         }
-        .select-all-cell {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
     </style>
 </head>
 <body>
@@ -404,9 +399,6 @@
         </div>
     </div>
 </div>
-
-<!-- Hidden table PDF container -->
-<div id="tablePdfContainer" style="display: none;"></div>
 
 <script>
 (function() {
@@ -554,7 +546,6 @@
                 const id = cb.dataset.id;
                 if(cb.checked) selectedLeadIds.add(id); else selectedLeadIds.delete(id);
                 updateSelectedButtonState();
-                // Update select all
                 const allCb = document.getElementById('selectAllCheckbox');
                 if(allCb) {
                     const visibleIds = [...document.querySelectorAll('.lead-checkbox')].map(c => c.dataset.id);
@@ -689,7 +680,7 @@
         });
     }
 
-    // ---------- PDF: Single Enrollment (existing style, but with Mandal heading) ----------
+    // ---------- PDF: Single Enrollment ----------
     async function generateSingleEnrollmentPDF(lead) {
         showToast("Generating enrollment form...", "info");
         try {
@@ -725,14 +716,14 @@
             });
             singleForm.querySelector('.gen-date').innerText = new Date().toLocaleString();
             
-            const opt = { margin: [0.5,0.5], filename: `Enrollment_${lead.student_name}.pdf`, html2canvas: { scale: 2, letterRendering: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            const opt = { margin: [0.5,0.5], filename: `Enrollment_${lead.student_name}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
             await html2pdf().set(opt).from(singleForm).save();
             template.remove();
             showToast("PDF downloaded", "success");
         } catch(e) { showToast("PDF failed", "error"); }
     }
 
-    // ---------- PDF TABLE REPORT (all columns) ----------
+    // ---------- PDF TABLE REPORT (FIXED: proper column widths & wrapping) ----------
     async function exportTablePDF() {
         let data = [...currentLeads];
         if (currentFilter !== "all") data = data.filter(l => l.status === currentFilter);
@@ -741,9 +732,9 @@
         try {
             const logoUrl = await getLogoDataURL();
             const container = document.createElement('div');
-            container.style.padding = '20px';
             container.style.fontFamily = 'Montserrat, sans-serif';
             container.style.background = 'white';
+            container.style.padding = '15px';
             
             // Header
             const header = document.createElement('div');
@@ -751,56 +742,86 @@
             header.style.alignItems = 'center';
             header.style.gap = '20px';
             header.style.borderBottom = '3px solid #E67E5E';
-            header.style.paddingBottom = '15px';
-            header.style.marginBottom = '20px';
+            header.style.paddingBottom = '12px';
+            header.style.marginBottom = '15px';
             if (logoUrl) {
                 const img = document.createElement('img');
                 img.src = logoUrl;
-                img.style.height = '60px';
+                img.style.height = '55px';
                 header.appendChild(img);
             }
             const titleDiv = document.createElement('div');
-            titleDiv.innerHTML = `<h1 style="color:#2C3E66;margin:0;">BrahmaKshatriya Mahila Mandal</h1><p style="color:#5D7B9F;">Leads Report · ${new Date().toLocaleDateString()}</p>`;
+            titleDiv.innerHTML = `<h1 style="color:#2C3E66;margin:0;font-size:1.5rem;">BrahmaKshatriya Mahila Mandal</h1><p style="color:#5D7B9F;margin:2px 0 0;">Leads Report · ${new Date().toLocaleDateString()}</p>`;
             header.appendChild(titleDiv);
             container.appendChild(header);
             
-            // Table
+            // Table with fixed layout and word wrap
             const table = document.createElement('table');
             table.style.width = '100%';
             table.style.borderCollapse = 'collapse';
-            table.style.fontSize = '10px';
+            table.style.fontSize = '9px';
+            table.style.tableLayout = 'fixed';
             table.style.wordBreak = 'break-word';
-            const thead = `<tr style="background:#F0F2F5;font-weight:700;color:#2C3E66;">
-                <th style="padding:6px;border:1px solid #ccc;">Student</th><th>Parent</th><th>DOB</th><th>Contact</th><th>Email</th><th>Program</th><th>Status</th><th>Source</th>
-            </tr>`;
-            table.innerHTML = thead;
-            data.forEach(l => {
-                const row = table.insertRow();
-                row.style.borderBottom = '1px solid #ddd';
-                row.innerHTML = `
-                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.student_name)}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.parent_name)}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${l.date_of_birth || '—'}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.contact_number)}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${l.email || '—'}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.inquiry_for || '—')}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${l.status}</td>
-                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.source_of_inquiry || '—')}</td>
-                `;
+            
+            // Column widths (8 columns total)
+            const colWidths = ['12%', '12%', '10%', '15%', '18%', '13%', '10%', '10%'];
+            const headers = ['Student', 'Parent', 'DOB', 'Contact', 'Email', 'Program', 'Status', 'Source'];
+            
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headerRow.style.background = '#F0F2F5';
+            headerRow.style.fontWeight = '700';
+            headerRow.style.color = '#2C3E66';
+            headers.forEach((h, i) => {
+                const th = document.createElement('th');
+                th.style.padding = '6px 4px';
+                th.style.border = '1px solid #ccc';
+                th.style.width = colWidths[i];
+                th.style.textAlign = 'left';
+                th.innerText = h;
+                headerRow.appendChild(th);
             });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            const tbody = document.createElement('tbody');
+            data.forEach(lead => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #ddd';
+                const cells = [
+                    lead.student_name,
+                    lead.parent_name,
+                    lead.date_of_birth || '—',
+                    lead.contact_number,
+                    lead.email || '—',
+                    lead.inquiry_for || '—',
+                    lead.status,
+                    lead.source_of_inquiry || '—'
+                ];
+                cells.forEach((text, idx) => {
+                    const td = document.createElement('td');
+                    td.style.padding = '6px 4px';
+                    td.style.border = '1px solid #ccc';
+                    td.style.verticalAlign = 'top';
+                    td.innerText = text;
+                    row.appendChild(td);
+                });
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
             container.appendChild(table);
             
-            // Footer with page numbers (handled by html2pdf config)
+            // Footer with page numbers
             const footer = document.createElement('div');
-            footer.style.marginTop = '20px';
+            footer.style.marginTop = '18px';
             footer.style.textAlign = 'center';
-            footer.style.fontSize = '9px';
+            footer.style.fontSize = '8px';
             footer.style.color = '#5D7B9F';
             footer.innerText = `Page {PAGE_NUM} of {PAGE_COUNT} · Generated ${new Date().toLocaleString()}`;
             container.appendChild(footer);
             
             const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
+                margin: [0.5, 0.4, 0.5, 0.4],
                 filename: `Leads_Table_${currentFilter}_${Date.now()}.pdf`,
                 image: { type: 'jpeg', quality: 0.95 },
                 html2canvas: { scale: 2, logging: false },
@@ -809,7 +830,10 @@
             };
             await html2pdf().set(opt).from(container).save();
             showToast("Table PDF exported", "success");
-        } catch(e) { showToast("Table PDF error", "error"); }
+        } catch(e) { 
+            console.error(e);
+            showToast("Table PDF error", "error"); 
+        }
     }
 
     // ---------- PDF: SELECTED ENROLLMENT FORMS (professional) ----------
@@ -894,9 +918,9 @@
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: `Selected_Enrollments_${selectedLeads.length}_forms.pdf`,
-                html2canvas: { scale: 2, letterRendering: true },
+                html2canvas: { scale: 2 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'], before: '.pagebreak' }
+                pagebreak: { mode: ['css', 'legacy'] }
             };
             await html2pdf().set(opt).from(masterContainer).save();
             showToast(`${selectedLeads.length} enrollment form(s) exported`, "success");
