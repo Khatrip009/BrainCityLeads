@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Suite | Lead Manager + CRUD + PDF Forms</title>
+    <title>Admin Suite · Lead Manager + PDF Exports</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -20,7 +20,7 @@
             padding: 1.5rem;
         }
         .dashboard-container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             background: white;
             border-radius: 1.5rem;
@@ -108,7 +108,7 @@
             align-items: center;
             gap: 0.8rem;
         }
-        select, .export-btn, .refresh-btn {
+        select, .export-btn, .refresh-btn, .pdf-table-btn, .pdf-enroll-btn {
             padding: 0.5rem 1rem;
             border-radius: 2rem;
             border: 1px solid #D9B48B;
@@ -117,10 +117,18 @@
             font-weight: 500;
             cursor: pointer;
         }
-        .export-btn, .refresh-btn {
+        .export-btn, .refresh-btn, .pdf-table-btn, .pdf-enroll-btn {
             background: #2C3E66;
             color: white;
             border: none;
+        }
+        .pdf-enroll-btn {
+            background: #E67E5E;
+        }
+        .pdf-enroll-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #aaa;
         }
         .table-wrapper {
             overflow-x: auto;
@@ -130,6 +138,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
+            min-width: 1300px;
         }
         th {
             background: #F0F2F5;
@@ -141,6 +150,7 @@
         td {
             padding: 0.8rem;
             border-bottom: 1px solid #EDF2F7;
+            vertical-align: middle;
         }
         .action-buttons {
             display: flex;
@@ -158,7 +168,11 @@
         .btn-icon:hover {
             background: #E2E8F0;
         }
-        /* Modal with brand header */
+        .checkbox-col {
+            width: 40px;
+            text-align: center;
+        }
+        /* Modal */
         .modal {
             position: fixed;
             top: 0;
@@ -244,7 +258,6 @@
             border-radius: 2rem;
             border: none;
         }
-        /* Toast Notifications */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -276,6 +289,11 @@
         @media (max-width: 700px) {
             .form-row { grid-template-columns: 1fr; }
         }
+        .select-all-cell {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
@@ -283,7 +301,7 @@
     <div class="dashboard-header">
         <div class="logo-area">
             <img src="abacus_logo.png" alt="Logo" onerror="this.src='https://placehold.co/50x50'">
-            <h1>Lead Manager Pro + CRUD</h1>
+            <h1>Lead Manager Pro · PDF Exports</h1>
         </div>
         <div>
             <button class="add-lead-btn" id="addLeadBtn">➕ Add New Lead</button>
@@ -311,16 +329,20 @@
             </select>
             <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
         </div>
-        <button class="export-btn" id="exportExcelBtn">📎 Export Excel</button>
+        <div style="display: flex; gap: 10px;">
+            <button class="export-btn" id="exportExcelBtn">📎 Export Excel</button>
+            <button class="pdf-table-btn" id="exportTablePdfBtn">📋 PDF Table Report</button>
+            <button class="pdf-enroll-btn" id="exportSelectedEnrollBtn" disabled>📄 Enrollment Forms (selected)</button>
+        </div>
     </div>
 
     <div class="table-wrapper" id="tableWrapper">
         <div class="loading">Loading leads...</div>
     </div>
-    <footer>🔐 Full CRUD | Click ✏️ to edit, 🗑️ to delete, 📄 to generate PDF admission form</footer>
+    <footer>🔐 Full CRUD · Check rows · Export table PDF or selected enrollment forms</footer>
 </div>
 
-<!-- Modal for Add/Edit Lead with Brand Header -->
+<!-- Add/Edit Modal -->
 <div id="leadModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -365,28 +387,30 @@
     </div>
 </div>
 
-<!-- Hidden PDF Template - Will be populated dynamically with logo dataURL -->
-<div id="pdfTemplate" style="display: none;">
-    <div id="admissionForm" style="font-family: 'Montserrat', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; background: white; border: 1px solid #ddd;">
-        <div id="pdfHeader" style="display: flex; align-items: center; gap: 1rem; border-bottom: 3px solid #E67E5E; padding-bottom: 1rem; margin-bottom: 1.5rem;">
-            <!-- Logo will be injected here as img with dataURL -->
-            <div id="pdfLogoContainer"></div>
+<!-- Hidden template for enrollment form (professional style) -->
+<div id="enrollmentFormTemplate" style="display: none;">
+    <div class="enrollment-form-single" style="font-family: 'Montserrat', sans-serif; background: white; padding: 25px; border: 1px solid #ccc; margin-bottom: 20px; page-break-after: always;">
+        <div style="display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #E67E5E; padding-bottom: 15px; margin-bottom: 20px;">
+            <div class="logo-placeholder"></div>
             <div>
-                <h1 style="color: #2C3E66; margin: 0;">BrainCity Abacus</h1>
-                <p style="color: #5D7B9F; margin: 0;">Empowering young minds</p>
+                <h1 style="color: #2C3E66; margin: 0 0 4px; font-size: 1.8rem;">BrahmaKshatriya Mahila Mandal</h1>
+                <p style="color: #5D7B9F; margin: 0; font-weight: 500;">Workshop Admission Form · Empowering Young Minds</p>
             </div>
         </div>
-        <h2 style="color: #E67E5E; text-align: center; margin-bottom: 1rem;">✨ Admission / Enrollment Form ✨</h2>
-        <div id="pdfContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;"></div>
-        <div style="margin-top: 2rem; border-top: 2px dashed #D9B48B; padding-top: 1rem; text-align: center; font-size: 0.75rem; color: #5D7B9F;">
-            Generated on <span id="pdfDate"></span> | BrainCity Abacus Program
+        <h2 style="color: #E67E5E; text-align: center; margin: 15px 0;">📋 Student Enrollment / Registration</h2>
+        <div class="form-content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px;"></div>
+        <div style="margin-top: 25px; border-top: 2px dashed #D9B48B; padding-top: 15px; text-align: right; font-size: 0.85rem;">
+            <span>Generated: <span class="gen-date"></span></span>
         </div>
     </div>
 </div>
 
+<!-- Hidden table PDF container -->
+<div id="tablePdfContainer" style="display: none;"></div>
+
 <script>
 (function() {
-    // ---------- SUPABASE CLIENT ----------
+    // ---------- SUPABASE ----------
     const SUPABASE_URL = "https://mskbwsxezirjvobgxifj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -394,12 +418,15 @@
     let currentLeads = [];
     let currentFilter = "all";
     let editId = null;
+    let selectedLeadIds = new Set();
 
     // DOM elements
     const tableWrapper = document.getElementById("tableWrapper");
     const statusFilter = document.getElementById("statusFilter");
     const refreshBtn = document.getElementById("refreshBtn");
-    const exportBtn = document.getElementById("exportExcelBtn");
+    const exportExcelBtn = document.getElementById("exportExcelBtn");
+    const exportTablePdfBtn = document.getElementById("exportTablePdfBtn");
+    const exportSelectedEnrollBtn = document.getElementById("exportSelectedEnrollBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const addLeadBtn = document.getElementById("addLeadBtn");
     const leadModal = document.getElementById("leadModal");
@@ -407,17 +434,16 @@
     const closeModalBtn = document.getElementById("closeModalBtn");
     const leadForm = document.getElementById("leadForm");
 
-    // Stats elements
+    // Stats
     const totalLeadsSpan = document.getElementById("totalLeads");
     const newLeads24hSpan = document.getElementById("newLeads24h");
     const conversionRateSpan = document.getElementById("conversionRate");
     const contactedCountSpan = document.getElementById("contactedCount");
     const convertedCountSpan = document.getElementById("convertedCount");
 
-    // ---------- Toast notification ----------
     function showToast(message, type = 'info') {
-        const existingToast = document.querySelector('.toast');
-        if (existingToast) existingToast.remove();
+        const existing = document.querySelector('.toast');
+        if(existing) existing.remove();
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerText = message;
@@ -425,7 +451,6 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // ---------- CRUD Functions ----------
     async function fetchLeads() {
         const { data, error } = await supabaseClient.from("inquiries").select("*").order("created_at", { ascending: false });
         if (error) throw error;
@@ -456,6 +481,7 @@
             currentLeads = await fetchLeads();
             updateStats(currentLeads);
             applyFilterAndRender();
+            updateSelectedButtonState();
             showToast("Dashboard refreshed", "success");
         } catch(e) { 
             tableWrapper.innerHTML = `<div class="loading">Error: ${e.message}</div>`;
@@ -469,32 +495,74 @@
         renderTable(filtered);
     }
 
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
 
     function renderTable(leads) {
-        if (!leads.length) { tableWrapper.innerHTML = '<div class="loading">✨ No leads found.</div>'; return; }
+        if (!leads.length) { 
+            tableWrapper.innerHTML = '<div class="loading">✨ No leads found.</div>'; 
+            return; 
+        }
+        const allSelected = leads.length > 0 && leads.every(l => selectedLeadIds.has(l.id));
+        const selectAllChecked = allSelected ? 'checked' : '';
         const html = `
             <table>
-                <thead><tr><th>Student</th><th>Parent</th><th>Contact</th><th>Email</th><th>Program</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody>${leads.map(lead => `
+                <thead>
                     <tr>
-                        <td><strong>${escapeHtml(lead.student_name)}</strong><br><small>DOB: ${lead.date_of_birth || '—'}</small></td>
-                        <td>${escapeHtml(lead.parent_name)}</td>
-                        <td>${escapeHtml(lead.contact_number)}<br><small>${lead.whatsapp_number ? 'WA: '+escapeHtml(lead.whatsapp_number) : ''}</small></td>
-                        <td>${lead.email ? escapeHtml(lead.email) : '—'}</td>
-                        <td>${escapeHtml(lead.inquiry_for || '—')}</td>
-                        <td><select class="status-select" data-id="${lead.id}">${['new','contacted','converted','closed'].map(s => `<option value="${s}" ${lead.status===s?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></td>
-                        <td class="action-buttons">
-                            <button class="btn-icon edit-lead" data-id="${lead.id}" data-lead='${JSON.stringify(lead).replace(/'/g, "&#39;")}' title="Edit">✏️</button>
-                            <button class="btn-icon delete-lead" data-id="${lead.id}" data-name="${escapeHtml(lead.student_name)}" title="Delete">🗑️</button>
-                            <button class="btn-icon pdf-lead" data-id="${lead.id}" title="PDF Admission Form">📄</button>
-                        </td>
-                    </tr>`).join('')}
+                        <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox" ${selectAllChecked}></th>
+                        <th>Student</th><th>Parent</th><th>Contact</th><th>Email</th><th>Program</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${leads.map(lead => {
+                        const checked = selectedLeadIds.has(lead.id) ? 'checked' : '';
+                        return `<tr>
+                            <td class="checkbox-col"><input type="checkbox" class="lead-checkbox" data-id="${lead.id}" ${checked}></td>
+                            <td><strong>${escapeHtml(lead.student_name)}</strong><br><small>DOB: ${lead.date_of_birth || '—'}</small></td>
+                            <td>${escapeHtml(lead.parent_name)}</td>
+                            <td>${escapeHtml(lead.contact_number)}<br><small>${lead.whatsapp_number ? 'WA: '+escapeHtml(lead.whatsapp_number) : ''}</small></td>
+                            <td>${lead.email ? escapeHtml(lead.email) : '—'}</td>
+                            <td>${escapeHtml(lead.inquiry_for || '—')}</td>
+                            <td><select class="status-select" data-id="${lead.id}">${['new','contacted','converted','closed'].map(s => `<option value="${s}" ${lead.status===s?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></td>
+                            <td class="action-buttons">
+                                <button class="btn-icon edit-lead" data-id="${lead.id}" data-lead='${JSON.stringify(lead).replace(/'/g, "&#39;")}' title="Edit">✏️</button>
+                                <button class="btn-icon delete-lead" data-id="${lead.id}" data-name="${escapeHtml(lead.student_name)}" title="Delete">🗑️</button>
+                                <button class="btn-icon pdf-single" data-id="${lead.id}" title="Single Enrollment PDF">📄</button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         `;
         tableWrapper.innerHTML = html;
         
+        // Select all
+        const selectAllCb = document.getElementById('selectAllCheckbox');
+        if(selectAllCb) {
+            selectAllCb.addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                document.querySelectorAll('.lead-checkbox').forEach(cb => {
+                    cb.checked = checked;
+                    const id = cb.dataset.id;
+                    if(checked) selectedLeadIds.add(id); else selectedLeadIds.delete(id);
+                });
+                updateSelectedButtonState();
+            });
+        }
+        // Individual checkboxes
+        document.querySelectorAll('.lead-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const id = cb.dataset.id;
+                if(cb.checked) selectedLeadIds.add(id); else selectedLeadIds.delete(id);
+                updateSelectedButtonState();
+                // Update select all
+                const allCb = document.getElementById('selectAllCheckbox');
+                if(allCb) {
+                    const visibleIds = [...document.querySelectorAll('.lead-checkbox')].map(c => c.dataset.id);
+                    const allChecked = visibleIds.length > 0 && visibleIds.every(i => selectedLeadIds.has(i));
+                    allCb.checked = allChecked;
+                }
+            });
+        });
         // Status change
         document.querySelectorAll('.status-select').forEach(sel => {
             sel.addEventListener('change', async (e) => {
@@ -503,31 +571,35 @@
                 renderDashboard();
             });
         });
-        // Edit buttons
+        // Edit
         document.querySelectorAll('.edit-lead').forEach(btn => {
             btn.addEventListener('click', () => {
                 const lead = JSON.parse(btn.getAttribute('data-lead'));
                 openEditModal(lead);
             });
         });
-        // Delete buttons
+        // Delete
         document.querySelectorAll('.delete-lead').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (confirm(`Delete ${btn.getAttribute('data-name')}?`)) {
                     await supabaseClient.from("inquiries").delete().eq('id', btn.dataset.id);
+                    selectedLeadIds.delete(btn.dataset.id);
                     showToast("Lead deleted", "success");
                     renderDashboard();
                 }
             });
         });
-        // PDF buttons
-        document.querySelectorAll('.pdf-lead').forEach(btn => {
+        // Single PDF (old enrollment)
+        document.querySelectorAll('.pdf-single').forEach(btn => {
             btn.addEventListener('click', async () => {
-                const leadId = btn.dataset.id;
-                const lead = currentLeads.find(l => l.id === leadId);
-                if (lead) generatePDF(lead);
+                const lead = currentLeads.find(l => l.id === btn.dataset.id);
+                if(lead) await generateSingleEnrollmentPDF(lead);
             });
         });
+    }
+
+    function updateSelectedButtonState() {
+        exportSelectedEnrollBtn.disabled = selectedLeadIds.size === 0;
     }
 
     function openEditModal(lead) {
@@ -589,7 +661,7 @@
         }
         if (editId) {
             await supabaseClient.from("inquiries").update(payload).eq('id', editId);
-            showToast("Lead updated successfully", "success");
+            showToast("Lead updated", "success");
         } else {
             payload.created_at = new Date().toISOString();
             await supabaseClient.from("inquiries").insert([payload]);
@@ -599,88 +671,239 @@
         renderDashboard();
     });
 
-    // ---------- Helper: Convert image to dataURL to avoid tainting ----------
+    // ---------- LOGO HELPER ----------
     async function getLogoDataURL() {
         return new Promise((resolve) => {
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // Attempt anonymous CORS (works if server allows)
+            img.crossOrigin = "Anonymous";
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-                const dataURL = canvas.toDataURL('image/png');
-                resolve(dataURL);
+                resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => {
-                // Fallback: return a text-based placeholder if logo fails
-                resolve(null);
-            };
-            img.src = "abacus_logo.png?" + new Date().getTime(); // cache buster
+            img.onerror = () => resolve(null);
+            img.src = "abacus_logo.png?" + Date.now();
         });
     }
 
-    // ---------- PDF Generation with actual logo (no tainting) ----------
-    async function generatePDF(lead) {
-        showToast("Preparing PDF...", "info");
+    // ---------- PDF: Single Enrollment (existing style, but with Mandal heading) ----------
+    async function generateSingleEnrollmentPDF(lead) {
+        showToast("Generating enrollment form...", "info");
         try {
-            const logoDataURL = await getLogoDataURL();
-            const templateDiv = document.getElementById('pdfTemplate').cloneNode(true);
-            templateDiv.style.display = 'block';
-            
-            // Inject logo
-            const logoContainer = templateDiv.querySelector('#pdfLogoContainer');
-            if (logoDataURL) {
-                const logoImg = document.createElement('img');
-                logoImg.src = logoDataURL;
-                logoImg.style.height = '60px';
-                logoImg.style.width = 'auto';
-                logoImg.style.objectFit = 'contain';
-                logoContainer.appendChild(logoImg);
+            const logoUrl = await getLogoDataURL();
+            const template = document.getElementById('enrollmentFormTemplate').cloneNode(true);
+            template.style.display = 'block';
+            const singleForm = template.querySelector('.enrollment-form-single');
+            const logoDiv = singleForm.querySelector('.logo-placeholder');
+            if (logoUrl) {
+                const img = document.createElement('img');
+                img.src = logoUrl;
+                img.style.height = '70px';
+                logoDiv.appendChild(img);
             } else {
-                // Fallback text logo
-                logoContainer.innerHTML = '<div style="background:#2C3E66; color:white; width:60px; height:60px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-weight:800; font-size:1.5rem;">BC</div>';
+                logoDiv.innerHTML = '<div style="background:#2C3E66;color:white;width:70px;height:70px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:800;">BC</div>';
             }
-            
-            const container = templateDiv.querySelector('#pdfContent');
-            container.innerHTML = '';
+            const grid = singleForm.querySelector('.form-content-grid');
+            grid.innerHTML = '';
             const fields = [
                 ['Student Name', lead.student_name], ['Parent/Guardian', lead.parent_name],
                 ['Date of Birth', lead.date_of_birth || '—'], ['Age', lead.age || '—'],
                 ['School', lead.school_name || '—'], ['Standard', lead.standard || '—'],
-                ['Contact Number', lead.contact_number], ['Email', lead.email || '—'],
-                ['WhatsApp', lead.whatsapp_number || '—'], ['WhatsApp Consent', lead.whatsapp_consent ? 'Yes' : 'No'],
-                ['Program Interested', lead.inquiry_for || '—'], ['Source', lead.source_of_inquiry || '—'],
-                ['Message', lead.message || '—'], ['Status', lead.status?.toUpperCase() || 'NEW'],
-                ['Admin Notes', lead.notes || '—']
+                ['Contact', lead.contact_number], ['Email', lead.email || '—'],
+                ['WhatsApp', lead.whatsapp_number || '—'], ['Consent', lead.whatsapp_consent ? 'Yes' : 'No'],
+                ['Program', lead.inquiry_for || '—'], ['Source', lead.source_of_inquiry || '—'],
+                ['Message', lead.message || '—'], ['Status', lead.status], ['Notes', lead.notes || '—']
             ];
             fields.forEach(([label, val]) => {
                 const div = document.createElement('div');
-                div.style.padding = '0.3rem';
-                div.style.borderBottom = '1px solid #eee';
-                div.innerHTML = `<strong style="color:#2C3E66;">${label}:</strong> <span style="color:#2D2F36;">${escapeHtml(String(val))}</span>`;
-                container.appendChild(div);
+                div.style.padding = '6px 0';
+                div.innerHTML = `<strong style="color:#2C3E66;">${label}:</strong> ${escapeHtml(String(val))}`;
+                grid.appendChild(div);
             });
-            templateDiv.querySelector('#pdfDate').innerText = new Date().toLocaleString();
-            const element = templateDiv.querySelector('#admissionForm');
-            const opt = { 
-                margin: [0.5, 0.5, 0.5, 0.5], 
-                filename: `Admission_${lead.student_name.replace(/\s/g, '_')}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, logging: false, useCORS: false }, 
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
-            };
-            await html2pdf().set(opt).from(element).save();
-            showToast("PDF downloaded successfully", "success");
-            templateDiv.remove();
-        } catch (err) {
-            console.error("PDF error:", err);
-            showToast("PDF generation failed. Please try again.", "error");
-        }
+            singleForm.querySelector('.gen-date').innerText = new Date().toLocaleString();
+            
+            const opt = { margin: [0.5,0.5], filename: `Enrollment_${lead.student_name}.pdf`, html2canvas: { scale: 2, letterRendering: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            await html2pdf().set(opt).from(singleForm).save();
+            template.remove();
+            showToast("PDF downloaded", "success");
+        } catch(e) { showToast("PDF failed", "error"); }
     }
 
-    // Export Excel
+    // ---------- PDF TABLE REPORT (all columns) ----------
+    async function exportTablePDF() {
+        let data = [...currentLeads];
+        if (currentFilter !== "all") data = data.filter(l => l.status === currentFilter);
+        if (!data.length) { showToast("No leads to export", "error"); return; }
+        showToast("Building table PDF...", "info");
+        try {
+            const logoUrl = await getLogoDataURL();
+            const container = document.createElement('div');
+            container.style.padding = '20px';
+            container.style.fontFamily = 'Montserrat, sans-serif';
+            container.style.background = 'white';
+            
+            // Header
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '20px';
+            header.style.borderBottom = '3px solid #E67E5E';
+            header.style.paddingBottom = '15px';
+            header.style.marginBottom = '20px';
+            if (logoUrl) {
+                const img = document.createElement('img');
+                img.src = logoUrl;
+                img.style.height = '60px';
+                header.appendChild(img);
+            }
+            const titleDiv = document.createElement('div');
+            titleDiv.innerHTML = `<h1 style="color:#2C3E66;margin:0;">BrahmaKshatriya Mahila Mandal</h1><p style="color:#5D7B9F;">Leads Report · ${new Date().toLocaleDateString()}</p>`;
+            header.appendChild(titleDiv);
+            container.appendChild(header);
+            
+            // Table
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.fontSize = '10px';
+            table.style.wordBreak = 'break-word';
+            const thead = `<tr style="background:#F0F2F5;font-weight:700;color:#2C3E66;">
+                <th style="padding:6px;border:1px solid #ccc;">Student</th><th>Parent</th><th>DOB</th><th>Contact</th><th>Email</th><th>Program</th><th>Status</th><th>Source</th>
+            </tr>`;
+            table.innerHTML = thead;
+            data.forEach(l => {
+                const row = table.insertRow();
+                row.style.borderBottom = '1px solid #ddd';
+                row.innerHTML = `
+                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.student_name)}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.parent_name)}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${l.date_of_birth || '—'}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.contact_number)}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${l.email || '—'}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.inquiry_for || '—')}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${l.status}</td>
+                    <td style="padding:6px;border:1px solid #ccc;">${escapeHtml(l.source_of_inquiry || '—')}</td>
+                `;
+            });
+            container.appendChild(table);
+            
+            // Footer with page numbers (handled by html2pdf config)
+            const footer = document.createElement('div');
+            footer.style.marginTop = '20px';
+            footer.style.textAlign = 'center';
+            footer.style.fontSize = '9px';
+            footer.style.color = '#5D7B9F';
+            footer.innerText = `Page {PAGE_NUM} of {PAGE_COUNT} · Generated ${new Date().toLocaleString()}`;
+            container.appendChild(footer);
+            
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: `Leads_Table_${currentFilter}_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: { scale: 2, logging: false },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+            await html2pdf().set(opt).from(container).save();
+            showToast("Table PDF exported", "success");
+        } catch(e) { showToast("Table PDF error", "error"); }
+    }
+
+    // ---------- PDF: SELECTED ENROLLMENT FORMS (professional) ----------
+    async function exportSelectedEnrollmentForms() {
+        if (selectedLeadIds.size === 0) return;
+        const selectedLeads = currentLeads.filter(l => selectedLeadIds.has(l.id));
+        if (!selectedLeads.length) return;
+        showToast(`Generating ${selectedLeads.length} enrollment form(s)...`, "info");
+        try {
+            const logoUrl = await getLogoDataURL();
+            const masterContainer = document.createElement('div');
+            masterContainer.style.background = 'white';
+            
+            for (let i = 0; i < selectedLeads.length; i++) {
+                const lead = selectedLeads[i];
+                const formDiv = document.createElement('div');
+                formDiv.style.padding = '25px';
+                formDiv.style.marginBottom = '10px';
+                formDiv.style.fontFamily = 'Montserrat, sans-serif';
+                formDiv.style.background = 'white';
+                formDiv.style.border = '1px solid #ccc';
+                if (i > 0) formDiv.style.pageBreakBefore = 'always';
+                
+                // Header
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.alignItems = 'center';
+                header.style.gap = '20px';
+                header.style.borderBottom = '3px solid #E67E5E';
+                header.style.paddingBottom = '15px';
+                header.style.marginBottom = '20px';
+                if (logoUrl) {
+                    const img = document.createElement('img');
+                    img.src = logoUrl;
+                    img.style.height = '70px';
+                    header.appendChild(img);
+                }
+                const title = document.createElement('div');
+                title.innerHTML = `<h1 style="color:#2C3E66;margin:0;">BrahmaKshatriya Mahila Mandal</h1><p style="color:#5D7B9F;font-weight:500;">Workshop Admission Form</p>`;
+                header.appendChild(title);
+                formDiv.appendChild(header);
+                
+                const h2 = document.createElement('h2');
+                h2.style.color = '#E67E5E';
+                h2.style.textAlign = 'center';
+                h2.style.margin = '15px 0';
+                h2.innerText = '📋 Student Enrollment / Registration';
+                formDiv.appendChild(h2);
+                
+                const grid = document.createElement('div');
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = '1fr 1fr';
+                grid.style.gap = '12px 20px';
+                const fields = [
+                    ['Student Name', lead.student_name], ['Parent/Guardian', lead.parent_name],
+                    ['Date of Birth', lead.date_of_birth || '—'], ['Age', lead.age || '—'],
+                    ['School', lead.school_name || '—'], ['Standard', lead.standard || '—'],
+                    ['Contact', lead.contact_number], ['Email', lead.email || '—'],
+                    ['WhatsApp', lead.whatsapp_number || '—'], ['Consent', lead.whatsapp_consent ? 'Yes' : 'No'],
+                    ['Program', lead.inquiry_for || '—'], ['Source', lead.source_of_inquiry || '—'],
+                    ['Message', lead.message || '—'], ['Status', lead.status], ['Notes', lead.notes || '—']
+                ];
+                fields.forEach(([lbl, val]) => {
+                    const d = document.createElement('div');
+                    d.innerHTML = `<strong style="color:#2C3E66;">${lbl}:</strong> ${escapeHtml(String(val))}`;
+                    grid.appendChild(d);
+                });
+                formDiv.appendChild(grid);
+                
+                const footerDiv = document.createElement('div');
+                footerDiv.style.marginTop = '25px';
+                footerDiv.style.borderTop = '2px dashed #D9B48B';
+                footerDiv.style.paddingTop = '15px';
+                footerDiv.style.textAlign = 'right';
+                footerDiv.style.fontSize = '0.85rem';
+                footerDiv.innerHTML = `Generated: ${new Date().toLocaleString()}`;
+                formDiv.appendChild(footerDiv);
+                
+                masterContainer.appendChild(formDiv);
+            }
+            
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: `Selected_Enrollments_${selectedLeads.length}_forms.pdf`,
+                html2canvas: { scale: 2, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'], before: '.pagebreak' }
+            };
+            await html2pdf().set(opt).from(masterContainer).save();
+            showToast(`${selectedLeads.length} enrollment form(s) exported`, "success");
+        } catch(e) { showToast("Export failed", "error"); console.error(e); }
+    }
+
+    // Excel export
     function exportToExcel() {
         let data = [...currentLeads];
         if (currentFilter !== "all") data = data.filter(l => l.status === currentFilter);
@@ -695,15 +918,18 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), 'Leads');
         XLSX.writeFile(wb, `leads_${currentFilter}_${new Date().toISOString().slice(0,19)}.xlsx`);
-        showToast("Export complete", "success");
+        showToast("Excel export complete", "success");
     }
 
+    // Event listeners
     statusFilter.addEventListener('change', (e) => { currentFilter = e.target.value; applyFilterAndRender(); });
     refreshBtn.addEventListener('click', renderDashboard);
-    exportBtn.addEventListener('click', exportToExcel);
+    exportExcelBtn.addEventListener('click', exportToExcel);
+    exportTablePdfBtn.addEventListener('click', exportTablePDF);
+    exportSelectedEnrollBtn.addEventListener('click', exportSelectedEnrollmentForms);
     logoutBtn.addEventListener('click', async () => { await supabaseClient.auth.signOut(); window.location.href = "login.html"; });
 
-    // Auth check
+    // Auth check & init
     (async () => {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) window.location.href = "login.html";
