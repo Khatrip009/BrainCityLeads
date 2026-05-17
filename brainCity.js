@@ -4,7 +4,7 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY';
     const TABLE_NAME = 'inquiries';
 
-    // Your deployed Google Apps Script URL with token
+    // Your deployed Google Apps Script URL (unchanged)
     const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
 
     // ═══════════ INIT SUPABASE ═══════════
@@ -82,7 +82,7 @@
         }
     }
 
-    // ═══════════ NOTIFICATIONS ═══════════
+    // ═══════════ ADMIN NOTIFICATION ═══════════
     async function sendAdminNotification(leadData) {
         const emailContent = `
 New Lead from BrainCity Abacus:
@@ -98,9 +98,9 @@ Message: ${leadData.message || '---'}
         `;
 
         try {
-            await fetch('https://formsubmit.co/ajax/poojakhatri519@gmail.com', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+            await fetch('https://formsubmit.co/ajax/khatrip.009@gmail.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     name: leadData.parent_name,
                     email: leadData.email || 'no-email@lead.com',
@@ -113,36 +113,35 @@ Message: ${leadData.message || '---'}
         }
     }
 
+    // ═══════════ THANK‑YOU EMAIL (iframe – no CORS) ═══════════
     async function sendThankYouEmail(leadData) {
-    if (!leadData.email) return;
+        if (!leadData.email) return;
 
-    // Build a virtual form that targets the hidden iframe
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.target = 'hiddenFrame';
-    form.action = THANK_YOU_SCRIPT_URL;   // already includes ?token=...
-    form.style.display = 'none';
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.target = 'hiddenFrame';
+        form.action = THANK_YOU_SCRIPT_URL;
+        form.style.display = 'none';
 
-    // Add the data as a single field (Apps Script will read it via e.parameter.payload)
-    const payload = JSON.stringify([{
-        email: leadData.email,
-        student_name: leadData.student_name,
-        parent_name: leadData.parent_name,
-        program: leadData.inquiry_for
-    }]);
+        const payload = JSON.stringify([{
+            email: leadData.email,
+            student_name: leadData.student_name,
+            parent_name: leadData.parent_name,
+            program: leadData.inquiry_for
+        }]);
 
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = payload;
-    form.appendChild(input);
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'payload';
+        input.value = payload;
+        form.appendChild(input);
 
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
 
-    console.log('Thank-you email request sent via iframe.');
-}
+        console.log('Thank-you email request sent via iframe.');
+    }
 
     async function sendConfirmationAndNotify(leadData) {
         showFeedback(
@@ -228,5 +227,4 @@ Message: ${leadData.message || '---'}
         window.location.href = 'login.html';
     });
     document.body.appendChild(adminBtn);
-
 })();
