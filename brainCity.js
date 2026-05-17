@@ -1,9 +1,6 @@
 (function() {
     // ═══════════ CONFIGURATION ═══════════
-    const SUPABASE_URL = 'https://mskbwsxezirjvobgxifj.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY';
-    const TABLE_NAME = 'inquiries';
-    const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
 
     // ═══════════ DOM REFERENCES ═══════════
     const form = document.getElementById('leadForm');
@@ -64,7 +61,7 @@
         }
     }
 
-    // ═══════════ ADMIN NOTIFICATION (no-cors fetch) ═══════════
+    // ═══════════ ADMIN NOTIFICATION (no‑cors fetch) ═══════════
     async function sendAdminNotification(leadData) {
         const emailContent = `
 New Lead from BrainCity Abacus:
@@ -86,7 +83,7 @@ Message: ${leadData.message || '---'}
         });
 
         try {
-            await fetch(THANK_YOU_SCRIPT_URL, {
+            await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
@@ -98,7 +95,7 @@ Message: ${leadData.message || '---'}
         }
     }
 
-    // ═══════════ THANK‑YOU EMAIL (no-cors fetch) ═══════════
+    // ═══════════ THANK‑YOU EMAIL (no‑cors fetch) ═══════════
     async function sendThankYouEmail(leadData) {
         if (!leadData.email) return;
 
@@ -110,7 +107,7 @@ Message: ${leadData.message || '---'}
         }]);
 
         try {
-            await fetch(THANK_YOU_SCRIPT_URL, {
+            await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
@@ -132,7 +129,7 @@ Message: ${leadData.message || '---'}
         sendThankYouEmail(leadData);
     }
 
-    // ═══════════ FORM SUBMISSION (sendBeacon for Supabase) ═══════════
+    // ═══════════ FORM SUBMISSION (Apps Script proxy) ═══════════
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitBtn.disabled = true;
@@ -172,19 +169,28 @@ Message: ${leadData.message || '---'}
             updated_at: new Date().toISOString()
         };
 
-        // ── Use sendBeacon to bypass all blockers ──
-        const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?apikey=${SUPABASE_ANON_KEY}`;
-        const blob = new Blob([JSON.stringify(leadData)], { type: 'text/plain' });
-        const beaconSent = navigator.sendBeacon(url, blob);
+        // Send lead data to Apps Script (type "lead") – no‑cors
+        const payload = JSON.stringify({
+            type: "lead",
+            leadData: leadData
+        });
 
-        if (!beaconSent) {
-            showFeedback('❌ Submission blocked. Please try again.', 'error', 'formFeedback');
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: payload
+            });
+            console.log('Lead data sent to Apps Script proxy.');
+        } catch (e) {
+            showFeedback('❌ Failed to send lead. Please try again.', 'error', 'formFeedback');
             submitBtn.disabled = false;
             submitBtn.innerText = '🚀 Submit & Get Confirmation →';
             return;
         }
 
-        // Since sendBeacon is fire-and-forget, we assume success.
+        // If we got here, the lead was accepted by Apps Script
         await sendConfirmationAndNotify(leadData);
 
         // Reset form
