@@ -7,9 +7,6 @@
     // Your deployed Google Apps Script URL (unchanged)
     const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
 
-    // ═══════════ INIT SUPABASE ═══════════
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     // ═══════════ DOM REFERENCES ═══════════
     const form = document.getElementById('leadForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -82,7 +79,7 @@
         }
     }
 
-    // ═══════════ ADMIN NOTIFICATION ═══════════
+    // ═══════════ ADMIN NOTIFICATION (to khatrip.009) ═══════════
     async function sendAdminNotification(leadData) {
         const emailContent = `
 New Lead from BrainCity Abacus:
@@ -96,7 +93,6 @@ School: ${leadData.school_name || 'N/A'}
 Source: ${leadData.source_of_inquiry}
 Message: ${leadData.message || '---'}
         `;
-
         try {
             await fetch('https://formsubmit.co/ajax/khatrip.009@gmail.com', {
                 method: 'POST',
@@ -117,11 +113,11 @@ Message: ${leadData.message || '---'}
     async function sendThankYouEmail(leadData) {
         if (!leadData.email) return;
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.target = 'hiddenFrame';
-        form.action = THANK_YOU_SCRIPT_URL;
-        form.style.display = 'none';
+        const iframeForm = document.createElement('form');
+        iframeForm.method = 'POST';
+        iframeForm.target = 'hiddenFrame';
+        iframeForm.action = THANK_YOU_SCRIPT_URL;
+        iframeForm.style.display = 'none';
 
         const payload = JSON.stringify([{
             email: leadData.email,
@@ -134,11 +130,11 @@ Message: ${leadData.message || '---'}
         input.type = 'hidden';
         input.name = 'payload';
         input.value = payload;
-        form.appendChild(input);
+        iframeForm.appendChild(input);
 
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+        document.body.appendChild(iframeForm);
+        iframeForm.submit();
+        document.body.removeChild(iframeForm);
 
         console.log('Thank-you email request sent via iframe.');
     }
@@ -152,7 +148,7 @@ Message: ${leadData.message || '---'}
         sendThankYouEmail(leadData);
     }
 
-    // ═══════════ FORM SUBMISSION ═══════════
+    // ═══════════ FORM SUBMISSION (raw fetch to Supabase) ═══════════
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitBtn.disabled = true;
@@ -173,7 +169,7 @@ Message: ${leadData.message || '---'}
         const date_of_birth = dobInput.value || null;
         if (date_of_birth && age === null) age = computeAge(date_of_birth);
 
-        const payload = {
+        const leadData = {
             student_name,
             parent_name,
             date_of_birth,
@@ -193,9 +189,22 @@ Message: ${leadData.message || '---'}
         };
 
         try {
-            const { error } = await supabase.from(TABLE_NAME).insert([payload]);
-            if (error) throw error;
-            await sendConfirmationAndNotify(payload);
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify(leadData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Supabase error ${response.status}: ${errorText}`);
+            }
+
+            await sendConfirmationAndNotify(leadData);
             form.reset();
             ageDisplay.value = '';
             ageHidden.value = '';
@@ -211,7 +220,7 @@ Message: ${leadData.message || '---'}
             document.getElementById('whatsapp_number').value = '';
             document.getElementById('message').value = '';
         } catch (err) {
-            showFeedback(`❌ Submission failed: ${err.message || 'Network error'}`, 'error', 'formFeedback');
+            showFeedback(`❌ Submission failed: ${err.message}`, 'error', 'formFeedback');
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerText = '🚀 Submit & Get Confirmation →';
