@@ -5,8 +5,7 @@
     const TABLE_NAME = 'inquiries';
 
     // ★ Replace with your Google Apps Script web app URL (include the token)
-    const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?token=my-secret-token-12345';
-
+    const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
     // ═══════════ INIT SUPABASE ═══════════
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
