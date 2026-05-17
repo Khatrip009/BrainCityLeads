@@ -114,25 +114,35 @@ Message: ${leadData.message || '---'}
     }
 
     async function sendThankYouEmail(leadData) {
-        if (!leadData.email) return;
-        const payload = [{
-            email: leadData.email,
-            student_name: leadData.student_name,
-            parent_name: leadData.parent_name,
-            program: leadData.inquiry_for
-        }];
-        try {
-            const response = await fetch(THANK_YOU_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-});
-            const result = await response.json();
-            console.log('Thank-you email result:', result);
-        } catch (e) {
-            console.warn('Thank-you email could not be sent:', e);
-        }
-    }
+    if (!leadData.email) return;
+
+    // Build a virtual form that targets the hidden iframe
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.target = 'hiddenFrame';
+    form.action = THANK_YOU_SCRIPT_URL;   // already includes ?token=...
+    form.style.display = 'none';
+
+    // Add the data as a single field (Apps Script will read it via e.parameter.payload)
+    const payload = JSON.stringify([{
+        email: leadData.email,
+        student_name: leadData.student_name,
+        parent_name: leadData.parent_name,
+        program: leadData.inquiry_for
+    }]);
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = payload;
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    console.log('Thank-you email request sent via iframe.');
+}
 
     async function sendConfirmationAndNotify(leadData) {
         showFeedback(
