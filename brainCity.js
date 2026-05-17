@@ -200,8 +200,10 @@ Message: ${leadData.message || '---'}
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Supabase error ${response.status}: ${errorText}`);
+                const errorBody = await response.text();
+console.error('Supabase error body:', errorBody);
+throw new Error(`Supabase error ${response.status}: ${errorBody}`);
+                
             }
 
             await sendConfirmationAndNotify(leadData);
