@@ -174,7 +174,7 @@ Message: ${leadData.message || '---'}
 
         // ── Use sendBeacon to bypass all blockers ──
         const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?apikey=${SUPABASE_ANON_KEY}`;
-        const blob = new Blob([JSON.stringify(leadData)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(leadData)], { type: 'text/plain' });
         const beaconSent = navigator.sendBeacon(url, blob);
 
         if (!beaconSent) {
