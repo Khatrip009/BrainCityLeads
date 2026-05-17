@@ -123,10 +123,10 @@ Message: ${leadData.message || '---'}
         }];
         try {
             const response = await fetch(THANK_YOU_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            });
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+});
             const result = await response.json();
             console.log('Thank-you email result:', result);
         } catch (e) {
