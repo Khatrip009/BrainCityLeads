@@ -99,8 +99,8 @@ Message: ${leadData.message || '---'}
 
         try {
             await fetch('https://formsubmit.co/ajax/poojakhatri519@gmail.com', {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: leadData.parent_name,
                     email: leadData.email || 'no-email@lead.com',
