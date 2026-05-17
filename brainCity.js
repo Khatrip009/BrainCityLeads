@@ -4,8 +4,9 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY';
     const TABLE_NAME = 'inquiries';
 
-    // ★ Replace with your Google Apps Script web app URL (include the token)
+    // Your deployed Google Apps Script URL with token
     const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
+
     // ═══════════ INIT SUPABASE ═══════════
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -37,7 +38,6 @@
         });
     });
 
-    // Default selection
     setActiveProgram('BrainCity: Brain Gym Full Course (Age 4-7)');
 
     // ═══════════ AGE CALCULATION ═══════════
@@ -96,16 +96,21 @@ School: ${leadData.school_name || 'N/A'}
 Source: ${leadData.source_of_inquiry}
 Message: ${leadData.message || '---'}
         `;
-        await fetch('https://formsubmit.co/ajax/poojakhatri519@gmail.com', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                name: leadData.parent_name,
-                email: leadData.email || 'no-email@lead.com',
-                message: emailContent,
-                _subject: `🔔 New Lead: ${leadData.inquiry_for} - ${leadData.student_name}`
-            })
-        }).catch(e => console.warn('Admin email optional error:', e));
+
+        try {
+            await fetch('https://formsubmit.co/ajax/poojakhatri519@gmail.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    name: leadData.parent_name,
+                    email: leadData.email || 'no-email@lead.com',
+                    message: emailContent,
+                    _subject: `🔔 New Lead: ${leadData.inquiry_for} - ${leadData.student_name}`
+                })
+            });
+        } catch (e) {
+            console.warn('Admin email optional error:', e);
+        }
     }
 
     async function sendThankYouEmail(leadData) {
@@ -119,7 +124,7 @@ Message: ${leadData.message || '---'}
         try {
             const response = await fetch(THANK_YOU_SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             });
             const result = await response.json();
@@ -134,7 +139,6 @@ Message: ${leadData.message || '---'}
             `🎉 Thank you ${leadData.student_name}! Your inquiry for "${leadData.inquiry_for}" is received. We'll contact you shortly.`,
             'success', 'formFeedback'
         );
-        // Fire both notifications (don't block UI)
         sendAdminNotification(leadData);
         sendThankYouEmail(leadData);
     }
@@ -189,7 +193,6 @@ Message: ${leadData.message || '---'}
             dobInput.value = '';
             document.getElementById('whatsapp_consent').checked = false;
             setActiveProgram('BrainCity: Brain Gym Full Course (Age 4-7)');
-            // Clear fields explicitly
             document.getElementById('student_name').value = '';
             document.getElementById('parent_name').value = '';
             document.getElementById('school_name').value = '';
