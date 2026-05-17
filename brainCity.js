@@ -4,8 +4,8 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_bUpP1gAD01_HJbibWQgjpA_bgfMuvTY';
     const TABLE_NAME = 'inquiries';
 
-    // Your deployed Google Apps Script URL (unchanged)
-    const THANK_YOU_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
+    // Your deployed Apps Script URL (unchanged)
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkOcg4xEUdkyGJVLuG4OQ2E9ga2UMEPqNFFkJZSbAJHAvChHJvv1HEpRdihxMmu1qQYQ/exec?token=BRAINCITY_2025_X9kL3mN7pQrT5vYz';
 
     // ═══════════ DOM REFERENCES ═══════════
     const form = document.getElementById('leadForm');
@@ -79,7 +79,7 @@
         }
     }
 
-    // ═══════════ ADMIN NOTIFICATION (to khatrip.009) ═══════════
+    // ═══════════ ADMIN NOTIFICATION (via iframe – no CORS) ═══════════
     async function sendAdminNotification(leadData) {
         const emailContent = `
 New Lead from BrainCity Abacus:
@@ -93,30 +93,40 @@ School: ${leadData.school_name || 'N/A'}
 Source: ${leadData.source_of_inquiry}
 Message: ${leadData.message || '---'}
         `;
-        try {
-            await fetch('https://formsubmit.co/ajax/khatrip.009@gmail.com', {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    name: leadData.parent_name,
-                    email: leadData.email || 'no-email@lead.com',
-                    message: emailContent,
-                    _subject: `🔔 New Lead: ${leadData.inquiry_for} - ${leadData.student_name}`
-                })
-            });
-        } catch (e) {
-            console.warn('Admin email optional error:', e);
-        }
+
+        const iframeForm = document.createElement('form');
+        iframeForm.method = 'POST';
+        iframeForm.target = 'hiddenFrame';
+        iframeForm.action = APPS_SCRIPT_URL;
+        iframeForm.style.display = 'none';
+
+        const payload = JSON.stringify({
+            type: "admin",
+            subject: `🔔 New Lead: ${leadData.inquiry_for} - ${leadData.student_name}`,
+            body: emailContent
+        });
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'payload';
+        input.value = payload;
+        iframeForm.appendChild(input);
+
+        document.body.appendChild(iframeForm);
+        iframeForm.submit();
+        document.body.removeChild(iframeForm);
+
+        console.log('Admin notification sent via iframe.');
     }
 
-    // ═══════════ THANK‑YOU EMAIL (iframe – no CORS) ═══════════
+    // ═══════════ THANK‑YOU EMAIL (via iframe – no CORS) ═══════════
     async function sendThankYouEmail(leadData) {
         if (!leadData.email) return;
 
         const iframeForm = document.createElement('form');
         iframeForm.method = 'POST';
         iframeForm.target = 'hiddenFrame';
-        iframeForm.action = THANK_YOU_SCRIPT_URL;
+        iframeForm.action = APPS_SCRIPT_URL;
         iframeForm.style.display = 'none';
 
         const payload = JSON.stringify([{
@@ -148,7 +158,7 @@ Message: ${leadData.message || '---'}
         sendThankYouEmail(leadData);
     }
 
-    // ═══════════ FORM SUBMISSION (raw fetch to Supabase) ═══════════
+    // ═══════════ FORM SUBMISSION ═══════════
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         submitBtn.disabled = true;
@@ -188,28 +198,24 @@ Message: ${leadData.message || '---'}
             updated_at: new Date().toISOString()
         };
 
-       
-           try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify(leadData)
-    });
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify(leadData)
+            });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Supabase error details:', errorText);
-        throw new Error(`Supabase error ${response.status}: ${errorText}`);
-    }
-
-}
-                
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Supabase error details:', errorText);
+                throw new Error(`Supabase error ${response.status}: ${errorText}`);
             }
 
+            // Success – send emails and reset form
             await sendConfirmationAndNotify(leadData);
             form.reset();
             ageDisplay.value = '';
