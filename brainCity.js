@@ -188,21 +188,25 @@ Message: ${leadData.message || '---'}
             updated_at: new Date().toISOString()
         };
 
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify(leadData)
-            });
+       
+           try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(leadData)
+    });
 
-            if (!response.ok) {
-                const errorBody = await response.text();
-console.error('Supabase error body:', errorBody);
-throw new Error(`Supabase error ${response.status}: ${errorBody}`);
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Supabase error details:', errorText);
+        throw new Error(`Supabase error ${response.status}: ${errorText}`);
+    }
+
+}
                 
             }
 
